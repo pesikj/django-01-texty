@@ -1,11 +1,13 @@
 # Naše aplikace
 
-V rámci kurzu vytvoříme aplikaci označovanou jako CRM, tedy aplikaci, do které jsou ukládány informace související s řízením obchodu a projektů. Základ naší aplikace budou informace o firmách (potenciálních nebo aktivních zákaznících), lidech, obchodních případech, obchodních schůzkách a produktech.
+V rámci kurzu vytvoříme aplikaci označovanou jako CRM, tedy aplikaci, do které jsou ukládány informace související s řízením obchodu a projektů. Základ naší aplikace budou informace o firmách (potenciálních nebo aktivních zákaznících), lidech (obchodních kontaktech) a obchodních případech. Do budoucna přidáme třeba záznamy o schůzkách nebo tvorbě marketingových kampaní.
 
 Začneme vytvořením projektu, který můžeme pojmenovat např. python-crm. Na začátku musíme udělat posloupnost rutinních kroků:
 
 - založit projekt ve vývojovém prostředí,
 - do virtuálního prostředí nainstalovat Django.
+
+V prostředí PyCharmu vytvoříme nový projekt volbou `File` -> `New Project`, případně tlačítkem `New Project` na uvítací obrazovce. Kromě názvu projektu nemusíme nic měnit a můžeme kliknout na tlačítko `OK`. `django` nainstalujeme pomocí panelu `Python Packages` (tlačítko na jeho otevření je v dolní liště), do vyhledávacího pole zadáme `django` a po úspěšném vyhledání balíčku klikneme na tlačítko `Install`.
 
 Poté vytvoříme projekt pomocí příkazu
 
@@ -55,23 +57,25 @@ class Address(models.Model):
     city = models.CharField(max_length=100, blank=True, null=True)
 
 
-class Account(models.Model):
+class Company(models.Model):
     status_choices = (
-        ("A", "Account"),
+        ("N", "New"),
         ("L", "Lead"),
         ("O", "Opportunity"),
         ("C", "Active Customer"),
         ("FC", "Former Customer"),
-        ("I", "Inactive Account"),
+        ("I", "Inactive"),
     )
+    name = models.CharField(max_length=20)
     status = models.CharField(max_length=2, default="A", choices=status_choices)
-    phone_number = models.CharField(max_length=20)
-    email = models.CharField(max_length=50)
+    phone_number = models.CharField(max_length=20, null=True, blank=True)
+    email = models.CharField(max_length=50, null=True, blank=True)
     identification_number = models.CharField(max_length=100)
+    address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True)
 
 
 class Contact(models.Model):
-    primary_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True)
+    primary_company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=20)
@@ -88,26 +92,29 @@ class Opportunity(models.Model):
         ("0", "Closed Lost"),
     )
 
-    account = models.ForeignKey(Account, on_delete=models.RESTRICT)
+    company = models.ForeignKey(Company, on_delete=models.RESTRICT)
     sales_manager = models.ForeignKey(User, on_delete=models.RESTRICT)
     primary_contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, null=True)
     description = models.TextField(null=True)
     status = models.CharField(max_length=2, default="1", choices=status_choices)
+
 ```
 
-V dalším kroku vytoříme uvítací obrazovku (pohled `IndexView`) a pohled na vytvoření firmy, který pojmenujeme `AccountCreateView`.
+V dalším kroku vytoříme uvítací obrazovku (pohled `IndexView`) a pohled na vytvoření firmy, který pojmenujeme `CompanyCreateView`.
 
 ```py
-from django.views.generic import CreateView, TemplateView
+from django.views.generic import CreateView, ListView, TemplateView
 import crm.models as models
+from django.urls import reverse_lazy
 
 class IndexView(TemplateView):
     template_name = "index.html"
 
-class AccountCreateView(CreateView):
-    model = models.Account
-    template_name = "account/create_account.html"
-    fields = ["status", "phone_number", "email", "identification_number"]
+class CompanyCreateView(CreateView):
+    model = models.Company
+    template_name = "company/create_company.html"
+    fields = ["name", "status", "phone_number", "email", "identification_number"]
+    success_url = reverse_lazy("index")
 
 ```
 
@@ -120,7 +127,7 @@ from . import views
 
 urlpatterns = [
     path('', views.IndexView.as_view(), name='index'),
-    path('account/create', views.AccountCreateView.as_view(), name='account_create'),
+    path('company/create', views.CompanyCreateView.as_view(), name='company_create'),
 ]
 ```
 
@@ -153,9 +160,8 @@ Vytvoříme "základní" šablonu `base.html`.
       <a class="nav-link" href="{% url 'index' %}">Home</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" href="{% url 'account_create' %}">Opportunities</a>
+      <a class="nav-link" href="{% url 'company_create' %}">Create Company</a>
     </li>
-
 </nav>
 {% block content %}
 
@@ -191,10 +197,58 @@ A poslední šablona je pro vytvoření firmy.
 ```html
 {% extends "base.html" %}
 {% block content %}
-<h1>Create account</h1>
-<form >
-{{ form.as_p }}
-<button type="submit" class="btn btn-primary">Primary</button>
+<h1>Create new company</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Primary</button>
 </form>
 {% endblock %}
 ```
+
+Zatím nemáme pohled a šablonu na seznam firem, v aplikaci tedy nemůžeme zkontrolovat, zda bylo vytvoření úspěšné. Můžeme ale použít administrátorské rozhraní. Nejprve zaregistrujeme model `Company`, aby byl v rozhraní viditelný.
+
+```html
+from django.contrib import admin
+import crm.models
+
+admin.site.register(crm.models.Company)
+```
+
+Dále musíme vytvořit uživatele, který bude mít do administrátorského rozhraní přístup. To zařídíme pomocí příkazu `python manage.py createsuperuser`. Zadáme uživatelské jméno a heslo (e-mail můžeme nechat nevyplněný). Administrátorské rozhraní si otevřeme na adrese [http://localhost:8000/admin/](http://localhost:8000/admin/), zadáme uživatelské jméno a heslo a zkontrolujeme, zda v seznamu firem vidíme námi vytvořené záznamy.
+
+## Nastavení
+
+Ne všechny části našeho programu mohou být bezpečně uloženy na internet. V případě našeho projektu jde především o `SECRET_KEY`, což je řetězec, pomocí kterého Django provádí šifrování přihlášení uživatele (`session`), případně jej používá k zabezpečení hesla. Abychom se vyhnuli uložení této informace do Gitu, nainstalujeme si balíček `python-decouple`. Následně vytvoříme soubor `.env` v kořenovém adresáři projektu a uložíme do něj hodnotu `SECRET_KEY`. Soubor `.env` tedy může vypadat např. takto:
+
+```
+SECRET_KEY=django-insecure-$ow=@+c^c^n@@sv^@caew@563l)uyf16h0$3l!32wf@2uhf-un
+```
+
+Následně vložíme import do souboru `settings.py`
+
+```py
+from decouple import config
+```
+
+Hodnotu `SECRET_KEY` nahradíme čtením z konfigurace pomocí funkce `config()`.
+
+```py
+SECRET_KEY = config("SECRET_KEY")
+```
+
+## Nahrání na Git
+
+Nyní můžeme náš projekt nahrát na Git. Z menu `VCS` vybereme volbu `Share on GitHub`. V okně `Share Project On Github` zadáme název projektu a rozhodneme, zda chceme uložit projekt jako soukromý nebo veřejný.
+
+# Úkoly
+
+## Seznam firem
+
+Vytvoř stránku, kde uživatel uvidí všechny firmy, které jsou v aplikaci uložené. Tento pohled by měl být založený na pohledu `ListView` a podobný pohled jsme již vytvářeli v kruzu [Python pro web](https://kodim.cz/czechitas/progr2-python/python-pro-web/sablony-a-pohledy/#vytvoreni-seznamu-kurzu). Pro jednotlivé firmy stačí vypsat jejich názvy do nečíslovaného seznamu (`<ul>`).
+
+## Obchodní případy
+
+Přidej do své aplikace pohled a šablonu na vytvoření obchodního případu (`Opportunity`). Následně vytvoř URL adresu aby bylo možné stránku otevřít. Vlož odkaz na adresu do navigačního panelu.
+
+Dále přidej pohled, šablonu a URL adresu pro stránku se seznamem obchodních případů.
