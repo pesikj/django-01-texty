@@ -255,9 +255,11 @@ Vytvoř stránku, kde uživatel uvidí všechny firmy, které jsou v aplikaci ul
 
 U modelu obchodního případu (`Opportunity`) přidej hodnotu, která bude typu `DecimalField`. Vytvoř soubor s migrací a proveď migraci své databáze.
 
-Přidej do své aplikace pohled a šablonu na vytvoření obchodního případu. Následně vytvoř URL adresu aby bylo možné stránku otevřít. Vlož odkaz na adresu do navigačního panelu. Před testem formuláře si pomocí administrátorského rozhraní vytvoř nového uživatele, který bude reprezentovat obchodníka.
+Přidej do své aplikace pohled a šablonu na vytvoření obchodního případu. Následně vytvoř URL adresu aby bylo možné stránku otevřít. Před testem formuláře si pomocí administrátorského rozhraní vytvoř nového uživatele, který bude reprezentovat obchodníka.
 
-Dále přidej pohled, šablonu a URL adresu pro stránku se seznamem obchodních případů.
+## Bonus
+
+Přidej pohled, šablonu a URL adresu pro stránku se seznamem obchodních případů.
 
 
 # Odkazy
