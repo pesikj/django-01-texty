@@ -12,11 +12,11 @@ Jednotlivé programy jsou na GitHubu sdílené jako repositáře. Repositář si
 
 Abys mohla GitHub v PyCharmu plnohodnotně využívat, musíš se nejprve přihlásit. Na uvítací obrazovce stačí kliknout na tlačítko `Get from VCS`, v novém okně pak na `GitHub` v levém panelu a poté na tlačítko Log In via GitHub. 
 
-![login-screen](images\login-screen.png)
+![login-screen](images/login-screen.png)
 
 Následně se otevře okno webového prohlížeče, kde stačí kliknout na tlačítko `Authorize in GitHub`.
 
-![login-screen](images\login-screen-2.png)
+![login-screen](images/login-screen-2.png)
 
 Alternativně můžeš využít volbu `Use token`. Tato volba opět otevře okno webového prohlížeče, tentokrát ale přímo na GitHubu. Na začátku budeš, z důvodu bezpečnosti, pravděpodobně požádána o zadání hesla. Na následující obrazovce je obrovské množství voleb, které ale nemusíš řešit (PyCharm již zařídil, že vše potřebné je zaškrtnuté) a pouze klikni na `Generate token`. Zajímavá je pouze volba `Expiration`, která určuje, jak dlouho bude token platný. Po vypršení platnosti můžeš stejným způsobem vytvořit nový, ale samozřejmě lze pro větší pohodlí nastavit delší platnost než 30 (třeba i neomezenou). Následně token (tedy dlouhý textový řetězec) zkopíruj do PyCharmu. Tím je přihlášení dokončeno.
 
@@ -34,7 +34,7 @@ Pro začátek klikni na volbu `Get from VCS` na uvítací obrazovce nebo `VCS` (
 
 Svoje projekty uvidíš po kliknutí na volbu GitHub v levém panelu. Pokud chceš klonovat cizí projekt, potřebuješ znát jeho adresu. Tu u každého projektu na GitHubu zjistíš po kliknutí na zelené tlačítko `Code`.
 
-![login-screen](images\ziskani_adresy.png)
+![login-screen](images/ziskani_adresy.png)
 
 ## Nahrání změn v kódu na GitHub
 
@@ -42,5 +42,5 @@ Nahrání se skládá ze dvou operací - `commit` a `push`. `commit` je vytvoře
 
 Pro nahrání změn nejprve klikni na záložku `Commit` na levém panelu a následně vyber soubory určené k nahrání. Poté dopiš poznámku (např. důvod změny, stručný popis nové funkce atd.) a klikni na tlačítko `Commit and Push`. Po potvrzení další obrazovky bys měla vidět svoje změny na serveru.
 
-![login-screen](images\commit.png)
+![login-screen](images/commit.png)
 
