@@ -1,0 +1,17 @@
+body {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+p {
+    background-color: red;
+}
+
+.bisque-paragraph {
+    background-color: bisque;
+    font-family: Georgia;
+}
+
+.blue-paragraph {
+    background-color: blue;
+    font-family: Georgia;
+}

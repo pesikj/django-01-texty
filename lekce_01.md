@@ -147,69 +147,6 @@ urlpatterns = [
 ]
 ```
 
-Vytvoříme "základní" šablonu `base.html`.
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Company Manager</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-</head>
-<body>
-<nav class="navbar navbar-expand-sm bg-light">
-  <ul class="navbar-nav">
-    <li class="nav-item">
-      <a class="nav-link" href="{% url 'index' %}">Home</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="{% url 'company_create' %}">Create Company</a>
-    </li>
-</nav>
-{% block content %}
-
-{% endblock %}
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-</body>
-</html>
-```
-
-Dále přidáme uvítací obrazovku, zatím bez textů.
-
-```html
-{% extends "base.html" %}
-{% block content %}
-<div class="jumbotron text-center">
-  <h1>Welcome in Company Manager</h1>
-</div>
-
-<div class="container">
-  <div class="row">
-    <div class="col-sm-4">
-      <h3>Column 1</h3>
-      <p>Lorem ipsum dolor..</p>
-    </div>
-  </div>
-</div>
-{% endblock %}
-```
-
-A poslední šablona je pro vytvoření firmy.
-
-```html
-{% extends "base.html" %}
-{% block content %}
-<h1>Create new company</h1>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Primary</button>
-</form>
-{% endblock %}
-```
-
 Zatím nemáme pohled a šablonu na seznam firem, v aplikaci tedy nemůžeme zkontrolovat, zda bylo vytvoření úspěšné. Můžeme ale použít administrátorské rozhraní. Nejprve zaregistrujeme model `Company`, aby byl v rozhraní viditelný.
 
 ```html
