@@ -1,6 +1,7 @@
 # Texty k jednotlivým lekcím
 
 * [Lekce 1 (Stuktura naší aplikace, opakování, Git a GitHub)](lekce_01.md)
+* [Lekce 2 (CSS a Bootstrap)](lekce_02.md)
 
 # Práce s Gitem
 
