@@ -81,6 +81,7 @@ Přehled základních písem je k dispozici [https://www.w3schools.com/css/css_f
 
 | atribut | význam | příklad hodnoty |
 |---|---|---|
+| `color` | barva písma | `red` |
 | `font-family` | písmo | `Courier New` |
 | `font-size` | velikost písma | `12px`, `smaller`, `2em` |
 | `font-style` | styl písma | `italic` |
@@ -133,10 +134,13 @@ Polohu můžeme nastavit absolutně (vzhledem k levému hornímu okraji stránky
 |---|---|---|
 | `z-index` | viditelnost elementu | `1`, `5`, `auto` |
 
-
 Kompletní přehled prvků je k dispozici například [zde](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Properties_Reference#common_css_properties_reference). 
 
 Samostatnou kapitolou jsou barvy. CSS nabízí širokou škálu pojmenovaných barev, jejich přehled je npaříklad [zde](https://www.w3schools.com/cssref/css_colors.asp). Pokud by ti seznam nestačil a potřebuješ použít jinou barvu (např. kvůli dodržení grafického manuálu), můžeš si barvu namixovat např. [zde](https://htmlcolorcodes.com/).
+
+### Tagy span a div
+
+V souvislosti s CSS časo využíváme dva tagy - `span` a `div`. Ty slouží většinou pro "obalení" nějakých elementů stránky třídou. Element `span` je označovaný jako in-line (řádkový) a slouží k obalení nějaké malé části prvků, např. několika slov odstavci. Element `div` je block-line (blokový). Jednoduše řečeno, při použití `div` tagu je před a za tag vloženo zalomení řádků.
 
 ## Bootstrap
 
@@ -176,7 +180,7 @@ Vytvoříme "základní" šablonu `base.html`. U této stránky je nutné vyzna�
 </html>
 ```
 
-U každé stránky nastavíme, že je rozšířením stránky `base.html` pomocí tagu `{% extends "base.html" %}`. Začneme s uvítací obrazovkou, kde přidáme nějaký testovací text. I na této stránce musíme vyznačit blok `content`, aby  došlo k propojení mezi oběma bloky.
+U každé stránky nastavíme, že je rozšířením stránky `base.html` pomocí tagu `{% extends "base.html" %}`. Začneme s uvítací obrazovkou, kde přidáme nějaký testovací text. I na této stránce musíme vyznačit blok `content`, aby došlo k propojení mezi oběma bloky.
 
 ```html
 {% extends "base.html" %}
@@ -212,14 +216,40 @@ Další šablona je pro stránku s vytvořením firmy.
 
 # Úkoly
 
+## Navigační panel
+
+Přidej k našemu webu navigační panel. Navigační panel vkládáme do tagu `nav` jako nečíslovaný seznam `ul`. Níže je příklad navigačního panelu s odkazem na titulní stránku.
+
+- Základní třída pro panel je `navbar`.
+- Třída `navbar-expand-sm` zařídí, že se na malých obrazovkách menu zobrazí jako vertikální.
+- Třída `bg-light` určuje barvu pozadí, v tomto případě jde o světle šedou. Další možnosti pozadí jsou k dispozici [zde](https://getbootstrap.com/docs/4.0/utilities/colors/#background-color).
+
+
 ```html
 <nav class="navbar navbar-expand-sm bg-light">
   <ul class="navbar-nav">
     <li class="nav-item">
       <a class="nav-link" href="{% url 'index' %}">Home</a>
     </li>
-    <li class="nav-item">
-      <a class="nav-link" href="{% url 'company_create' %}">Create Company</a>
+</nav>
+```
+
+Protože odkazů v naší aplikaci bude více a nemusely by se do panelu vejít, můžeš vytvořit menu, do kterého budeš vkládat odkazy, které spolu souvisejí (např. jedno rozbalovací menu pro firmy, druhé pro obchodní příležitosti atd.). Níže je příklad rozbahovacího menu, které vkládáme jako další položku do seznamu. 
+
+- Rozbalovací menu je samostatný (vnořený) nečíslovaný seznam, který má třídu `dropdown`. 
+- Nadpis menu je vložený jako odkaz se třídou `dropdown-toggle`. Atribut `data-toggle` atribut zajistí, že po kliknutí myší na nadpis dojde k rozbalení seznamu.
+- Tag `span` se třídou `caret` zobrazí šipku u odkazu, aby bylo zřejmé, že jde o rozbalovací menu.
+- Jednotlivé odkazy v menu jsou pak vloženy jako nečíslovaný seznam s třídou `dropdown-menu`.
+
+```html
+<nav class="navbar navbar-expand-sm bg-light">
+  <ul class="navbar-nav">
+    <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown">Rozbalovací menu<span class="caret"></span></a>
+      <ul class="dropdown-menu">
+        <li><a href="#">Položka 1</a></li>
+        <li><a href="#">Položka 2</a></li>
+      </ul>
     </li>
+  </ul>
 </nav>
 ```
