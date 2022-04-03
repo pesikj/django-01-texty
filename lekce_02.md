@@ -234,7 +234,6 @@ Hodnotu `SECRET_KEY` nahradíme čtením z konfigurace pomocí funkce `config()`
 SECRET_KEY = config("SECRET_KEY")
 ```
 
-
 # Úkoly
 
 ## Navigační panel
@@ -265,12 +264,25 @@ Protože odkazů v naší aplikaci bude více a nemusely by se do panelu vejít,
 ```html
 <nav class="navbar navbar-expand-sm bg-light">
   <ul class="navbar-nav">
-    <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown">Rozbalovací menu<span class="caret"></span></a>
-      <ul class="dropdown-menu">
-        <li><a href="#">Položka 1</a></li>
-        <li><a href="#">Položka 2</a></li>
-      </ul>
-    </li>
+      <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Název menu
+          </a>
+          <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#">Položka 1</a></li>
+              <li><a class="dropdown-item" href="#">Položka 2</a></li>
+          </ul>
+      </li>
   </ul>
 </nav>
 ```
+
+## Bonus
+
+Zkus upravit aplikaci tak, aby vypadala trochu odlišně. Můžeš například nastavit jinou barvu pozadí navigačnímu panelu. Použij tag `style`, práci se souborem `.css` si ještě ukážeme. Tag `style` vlož do hlavičky souboru `base.html` pod tag `link`. Následně můžeš nastavit pro třídu `navbar` barvu pozadí dle své volby. 
+
+Zkus například nastavit jako barvu pozadí `#e6007e`. Co ti ta barva připomíná? Současně odeber třídu `bg-light`, protože ta by tvoji změnu přepsala.
+
+Tato barva nevypadá moc dobře s modrým písmem. Zkus provést změnu barvy například na bílou. To již nejde u třídy `navbar`, ale je potřeba najít třídu, která je blíže textu, který chceš obarvit.
+
+Stejným způsobem můžeš libovolně upravit jakoukoli třídu.

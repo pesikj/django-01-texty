@@ -87,7 +87,7 @@ Nyní se odkaz na odhlášení zobrazí pouze v případě, že je uživatel př
 {% endif %}
 ```
 
-## Uživatelská uprávnění
+## Omezení přístupu k pohledům
 
 Aby mělo přihlašování nějaký smysl, musíme dát přihlášeným uživatelům nějakou funkci navíc. "Šikanování" nepřihlášených uživatelů provádíme na úrovni pohledů. Nepřihlášený uživatel by například rozhodně neměl vidět pohled na firmy či obchodní příležitosti. To zajistíme pomocí tzv. `Mixin`. `Mixin` je třída, kterou můžeme využít v rámci dědičnosti. Pokud bude náš pohled dědit od `LoginRequiredMixin`, může si jen zobrazit pouze přihlášený uživatel.
 
@@ -102,3 +102,34 @@ class CompanyListView(LoginRequiredMixin, ListView):
     model = models.Company
     template_name = "company/list_company.html"
 ```
+
+## Uživatelské skupiny
+
+K některým akcím ale přihlášení nemusí stačit. Například můžeme rozhodnout, že založení obchodního případu můžou provést pouze určití uživatelé. Práva k akcím můžeme nastavovat na konkrétní uživatele nebo na uživatelské skupiny. Výhodou skupin je větší přehlednost a možnost snadno měnit nastavení pro více uživatelů.
+
+Skupinu vytvoříme v administrátorském rozhraní. Abychom k němu měli přístup, musíme se nejdříve přihlásit uživatelským jménem administrátora, které jsme vytvářeli příkazem `python manage.py createsuperuser`.
+
+![create_group](images/lekce_03/create_group.png)
+
+Vytvoříme tedy skupinu `Salesman` a přiřadíme ji práva `crm | opportunity | Can add opportunity` a `crm | opportunity | Can change opportunity`. Následně novou roli přiřadíme nějakému uživateli. Tento uživatel nesmí být administrátor (nesmí mít zaškrtnutou volbu `Superuser status`), protože superuživatel může cokoli :-)
+
+![create_group](images/lekce_03/assign_group.png)
+
+Toto nastavení se do aplikace zatím nepromítne. Resp. samotné nastavení skupin by se projevilo, pokud by uživatel měl přístup do administrátorského rozhaní (tj. měl zaškrtnutou volbu `Staff status`, ale nebyl superuživatel). V takovém případě by v administrátorském rozhraní mohl vidět a měnit pouze to, co má povolené.
+
+Pro naše vlastní pohledy ale musíme omezení nastavit. K tomu nám poslouží `PermissionRequiredMixin`, který funguje podobně jako `LoginRequiredMixin`. U pohledu ale musíme nastavit atribut `permission_required`, kterým říkáme, jaké oprávnění musí uživatel mít, aby si mohl pohled zobrazit.
+
+```py
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+
+class OpportunityCreateView(PermissionRequiredMixin, CreateView):
+    permission_required = 'crm.add_opportunity'
+    model = models.Opportunity
+    template_name = "company/create_company.html"
+    fields = ["company", "sales_manager", "primary_contact", "description", "status"]
+    success_url = reverse_lazy("index")
+```
+
+Pokud uživatel nemá oprávnění na vytvoření obchodního případu, zobrazí se mu po této úpravě následující chyba. Uživatel, který oprávnění má, nebude pozorovat žádnou změnu.
+
+![create_group](images/lekce_03/forbidden.png)
