@@ -2,6 +2,8 @@
 
 * [Lekce 1 (Stuktura naší aplikace, opakování, Git a GitHub)](lekce_01.md)
 * [Lekce 2 (CSS a Bootstrap)](lekce_02.md)
+* [Lekce 3 (Uživatelské účty)](lekce_03.md)
+
 
 # Práce s Gitem
 

@@ -214,6 +214,27 @@ Další šablona je pro stránku s vytvořením firmy.
 {% endblock %}
 ```
 
+# Nastavení
+
+Ne všechny části našeho programu mohou být bezpečně uloženy na internet. V případě našeho projektu jde především o `SECRET_KEY`, což je řetězec, pomocí kterého Django provádí šifrování přihlášení uživatele (`session`), případně jej používá k zabezpečení hesla. Abychom se vyhnuli uložení této informace do Gitu, nainstalujeme si balíček `python-decouple`. Následně vytvoříme soubor `.env` v kořenovém adresáři projektu a uložíme do něj hodnotu `SECRET_KEY`. Soubor `.env` tedy může vypadat např. takto:
+
+```
+SECRET_KEY=django-insecure-$ow=@+c^c^n@@sv^@caew@563l)uyf16h0$3l!32wf@2uhf-un
+```
+
+Následně vložíme import do souboru `settings.py`
+
+```py
+from decouple import config
+```
+
+Hodnotu `SECRET_KEY` nahradíme čtením z konfigurace pomocí funkce `config()`.
+
+```py
+SECRET_KEY = config("SECRET_KEY")
+```
+
+
 # Úkoly
 
 ## Navigační panel
