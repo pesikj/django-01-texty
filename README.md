@@ -3,6 +3,15 @@
 * [Lekce 1 (Stuktura naší aplikace, opakování, Git a GitHub)](lekce_01.md)
 * [Lekce 2 (CSS a Bootstrap)](lekce_02.md)
 * [Lekce 3 (Uživatelské účty)](lekce_03.md)
+* [Lekce 4 (Registrace uživatelů, rozšíření modelu uživatele, zprávy)](lekce_04.md)
+* Lekce 5 (Úprava administrátorského rozhraní, automatické testy)
+* Lekce 6 (Modul django-crispy-forms)
+* Lekce 7 (Sítě, HTTP protokol, deployment)
+* Lekce 8 (Django REST Framework, JavaScript, autocomplete)
+* Lekce 9 (Modul django-tables2, filtry)
+* Lekce 10 (Nahrávání souborů, statické soubory, cookies a relace)
+* Lekce 11 (Grafy a vizualizace, odesílání e-mailů)
+* Lekce 12 (HTML soubory)
 
 
 # Práce s Gitem
