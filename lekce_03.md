@@ -130,6 +130,20 @@ class OpportunityCreateView(PermissionRequiredMixin, CreateView):
     success_url = reverse_lazy("index")
 ```
 
-Pokud uživatel nemá oprávnění na vytvoření obchodního případu, zobrazí se mu po této úpravě následující chyba. Uživatel, který oprávnění má, nebude pozorovat žádnou změnu.
+Pokud uživatel nemá oprávnění na vytvoření obchodního případu, zobrazí se mu po této úpravě následující chyba.
 
 ![create_group](images/lekce_03/forbidden.png)
+
+Uživatel, který oprávnění má, nebude pozorovat žádnou změnu.
+
+### Práce s oprávněními v šabloně
+
+Pokud uživatel nemůže otevřít nějakou stránku, je lepší mu odkaz na ni vůbec nezobrazovat. To můžeme vyřešit na úrovni šablony, a to podobným způsobem, jako kontrolovali přihlášení uživatele. Poslouží nám k tomu proměnná `perm`. Ověření, zda má uživatel oprávnění přidat obchodní případ, ověříme podmínkou:
+
+```
+{% if perms.crm.add_opportunity %}
+```
+
+Tím můžeme uživateli zobrazovat odkazy pouze na stránky, které může otevřít. Díky tomu bude aplikace pro uživatele jednodušší a přehlednější.
+
+Pozor, skrytí odkazu nás nezbavuje nutnosti nastavit práva na pohledu. Pokud bychom pouze adresu stránky skryli, uživatel by ji mohl uhádnout nebo okoukat u kolegy a následně provádět činnost, která mu nepřísluší.
