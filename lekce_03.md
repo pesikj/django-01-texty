@@ -87,6 +87,12 @@ Nyní se odkaz na odhlášení zobrazí pouze v případě, že je uživatel př
 {% endif %}
 ```
 
+Nakonec je ještě dobré nastavit adresu, kam má být uživatel přesměrován po přihlášení. Název adresy, kam má být uživatel přesměrován po přihlášení, vložíme do hodnoty `LOGOUT_REDIRECT_URL` v nastavení (soubor `settings.py`).
+
+```py
+LOGOUT_REDIRECT_URL = "index"
+```
+
 ## Omezení přístupu k pohledům
 
 Aby mělo přihlašování nějaký smysl, musíme dát přihlášeným uživatelům nějakou funkci navíc. "Šikanování" nepřihlášených uživatelů provádíme na úrovni pohledů. Nepřihlášený uživatel by například rozhodně neměl vidět pohled na firmy či obchodní příležitosti. To zajistíme pomocí tzv. `Mixin`. `Mixin` je třída, kterou můžeme využít v rámci dědičnosti. Pokud bude náš pohled dědit od `LoginRequiredMixin`, může si jen zobrazit pouze přihlášený uživatel.
@@ -133,3 +139,66 @@ class OpportunityCreateView(PermissionRequiredMixin, CreateView):
 Pokud uživatel nemá oprávnění na vytvoření obchodního případu, zobrazí se mu po této úpravě následující chyba. Uživatel, který oprávnění má, nebude pozorovat žádnou změnu.
 
 ![create_group](images/lekce_03/forbidden.png)
+
+### Nastavení oprávnění na úroveň jednotlivých záznamů
+
+Aktuální nastavení rolí umožňuje pouze povolit nebo zakázat uživateli manipulaci nebo prohlížení všech záznamů nějakého modelu. V některých případech můžeme řešit nastavení na úrovni jednotlivých záznamů. To je důležité například při práci s osobními daty v bankovnictví, zdravotnictví nebo školství.
+
+## Obnovení hesla
+
+Lidé jsou zapomnětliví a může se stát, že někdo z uživatelů zapomene heslo. Djagno umožňuje použít standardní mechanismus změny hesla po ověřené e-mailu. My si zatím připravíme formulář na žádost uživatele o obnovení hesla.
+
+```html
+{% extends "base.html" %}
+{% block content %}
+<h2>Password Reset</h2>
+<p>Please fillin the e-mail address of your account</p>
+<form method="post">
+    {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Odeslat</button>
+</form>
+{% endblock %}
+```
+
+Jako druhý krok přidáme stránku, kam chceme uživatele přesměrové poté, co vyplní e-mail.
+
+```html
+{% extends "base.html" %}
+{% block content %}
+<h2>Password Reset Finished</h2>
+{% endblock %}
+```
+
+E-mail zatím odeslán není, protože nemáme nastavené připojení na server, který e-mail může odeslat.
+
+### Nastavení služby Mailtrap
+
+Ve fázi vývoje je jednodušší a bezpečnější e-maily neodesílat, ale pouze použít nějakou službu, která simuluje odesílání mailů. Příkladem takové služby je služba [Mailtrap](https://mailtrap.io/). Pro použití služby je nutné se nejprve zaregistrovat a oveřit e-mail.
+
+Po přihlášení do aplikace je potřeba vytvořit novou mailovou schránku. K tomu slouží tlačítko `Add Inbox`. Té přiřadíme nějaké jméno (např. `Django`).
+
+![create_group](images/lekce_03/mailtrap_1.png)
+
+Po kliknutí na název schránky vidíme na záložce `SMTP Settings` nastavení schránky pro různá prostředí, která můžeme rovou překopírovat. Ve dlouhém seznamu nechybí `Djano`. Nastavení má pouze čtyři řádky, které zkopírujeme do souboru `settings.py`.
+
+![create_group](images/lekce_03/mailtrap_2.png)
+
+Nyní můžeme znovu vyzkoušet reset mailu. Pokud máme správně zkopírované nastavení a použijeme reset na adresu, kterou má nastavenou nějaký uživatel, zobrazí se v naší schránce e-mail. V něm vidíme text, který by byl odeslán uživateli. E-mail obsahuje stručný text a unikátní odkaz, který umožní zapomnětlivému uživateli nastavit nové heslo.
+
+![create_group](images/lekce_03/mailtrap_3.png)
+
+# Cvičení
+
+## Úprava obchodního případu
+
+Umožni uživatelům úpravu obchodní případů s tím, že ji smějí provádět pouze členové skupiny `Salesman`.
+
+- Vytvoř pohled `OpportunityUpdateView`, který bude sloužit k úpravě informací o obchodním případu. Pohled má stejné atributy jako `OpportunityCreateView`, tj. `model`, `template_name`, `fields` a `success_url`.
+- Vytvoř k němu šablonu. Jako základ můžeš použít šablonu `create_opportunity.html`, nezapomeň na případnou úpravu nadpisu, aby uživatel nebyl zmatený.
+- Vytvoř adresu pro tento pohled. Zde je potřeba do URL adresy vložit ID obchodního případu, který chceš upravovat. První parametr funkce `path()` při vytváření nové adresy by tedy mohl vypadat například takto: `'opportunity/update/<int:pk>'`.
+- Pomocí `PermissionRequiredMixin` omez přístup k pohledu pouze pro uživatele, kteří mají právo upravovat obchodní případy.
+
+## Bonus: Bezpečné uložení nastavení e-mailu
+
+Ze čtyř informací, které používáme k nastavení e-mailu, jsou minimálně dvě citlivé (`EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`). Přesto se ale může hodit používat službu Mailtrap ve vývojovém prostředí a na produkčním serveru používat skutečný server pro odesílání pošty. Aby to bylo možné, přenes nastavení e-mailu do souboru `.env` a jejich hodnoty načti s využitím modulu `python-decouple`.
