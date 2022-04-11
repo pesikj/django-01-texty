@@ -142,7 +142,7 @@ Pokud uživatel nemá oprávnění na vytvoření obchodního případu, zobraz�
 
 Uživatel, který oprávnění má, nebude pozorovat žádnou změnu.
 
-### Práce s oprávněními v šabloně
+### Nepovinné čtení na doma: Práce s oprávněními v šabloně
 
 Pokud uživatel nemůže otevřít nějakou stránku, je lepší mu odkaz na ni vůbec nezobrazovat. To můžeme vyřešit na úrovni šablony, a to podobným způsobem, jako kontrolovali přihlášení uživatele. Poslouží nám k tomu proměnná `perm`. Ověření, zda má uživatel oprávnění přidat obchodní případ, ověříme podmínkou:
 
@@ -154,53 +154,9 @@ Tím můžeme uživateli zobrazovat odkazy pouze na stránky, které může otev
 
 Pozor, skrytí odkazu nás nezbavuje nutnosti nastavit práva na pohledu. Pokud bychom pouze adresu stránky skryli, uživatel by ji mohl uhádnout nebo okoukat u kolegy a následně provádět činnost, která mu nepřísluší.
 
-### Nastavení oprávnění na úroveň jednotlivých záznamů
+### Nepovinné čtení na doma: Nastavení oprávnění na úroveň jednotlivých záznamů
 
 Aktuální nastavení rolí umožňuje pouze povolit nebo zakázat uživateli manipulaci nebo prohlížení všech záznamů nějakého modelu. V některých případech můžeme řešit nastavení na úrovni jednotlivých záznamů. To je důležité například při práci s osobními daty v bankovnictví, zdravotnictví nebo školství.
-
-## Obnovení hesla
-
-Lidé jsou zapomnětliví a může se stát, že někdo z uživatelů zapomene heslo. Djagno umožňuje použít standardní mechanismus změny hesla po ověřené e-mailu. My si zatím připravíme formulář na žádost uživatele o obnovení hesla.
-
-```html
-{% extends "base.html" %}
-{% block content %}
-<h2>Password Reset</h2>
-<p>Please fillin the e-mail address of your account</p>
-<form method="post">
-    {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Odeslat</button>
-</form>
-{% endblock %}
-```
-
-Jako druhý krok přidáme stránku, kam chceme uživatele přesměrové poté, co vyplní e-mail.
-
-```html
-{% extends "base.html" %}
-{% block content %}
-<h2>Password Reset Finished</h2>
-{% endblock %}
-```
-
-E-mail zatím odeslán není, protože nemáme nastavené připojení na server, který e-mail může odeslat.
-
-### Nastavení služby Mailtrap
-
-Ve fázi vývoje je jednodušší a bezpečnější e-maily neodesílat, ale pouze použít nějakou službu, která simuluje odesílání mailů. Příkladem takové služby je služba [Mailtrap](https://mailtrap.io/). Pro použití služby je nutné se nejprve zaregistrovat a oveřit e-mail.
-
-Po přihlášení do aplikace je potřeba vytvořit novou mailovou schránku. K tomu slouží tlačítko `Add Inbox`. Té přiřadíme nějaké jméno (např. `Django`).
-
-![create_group](images/lekce_03/mailtrap_1.png)
-
-Po kliknutí na název schránky vidíme na záložce `SMTP Settings` nastavení schránky pro různá prostředí, která můžeme rovou překopírovat. Ve dlouhém seznamu nechybí `Djano`. Nastavení má pouze čtyři řádky, které zkopírujeme do souboru `settings.py`.
-
-![create_group](images/lekce_03/mailtrap_2.png)
-
-Nyní můžeme znovu vyzkoušet reset mailu. Pokud máme správně zkopírované nastavení a použijeme reset na adresu, kterou má nastavenou nějaký uživatel, zobrazí se v naší schránce e-mail. V něm vidíme text, který by byl odeslán uživateli. E-mail obsahuje stručný text a unikátní odkaz, který umožní zapomnětlivému uživateli nastavit nové heslo.
-
-![create_group](images/lekce_03/mailtrap_3.png)
 
 # Cvičení
 
