@@ -1,6 +1,6 @@
 # Obnovení hesla
 
-Lidé jsou zapomnětliví a může se stát, že někdo z uživatelů zapomene heslo. Djagno umožňuje použít standardní mechanismus změny hesla po ověřené e-mailu. My si zatím připravíme formulář na žádost uživatele o obnovení hesla.
+Lidé jsou zapomnětliví a může se stát, že někdo z uživatelů zapomene heslo. Djagno umožňuje použít standardní mechanismus změny hesla po ověřené e-mailu. My si zatím připravíme formulář na žádost uživatele o obnovení hesla. Formulář uložíme do šablony `password_reset_form.html`.
 
 ```html
 {% extends "base.html" %}
@@ -15,7 +15,7 @@ Lidé jsou zapomnětliví a může se stát, že někdo z uživatelů zapomene h
 {% endblock %}
 ```
 
-Jako druhý krok přidáme stránku, kam chceme uživatele přesměrové poté, co vyplní e-mail.
+Jako druhý krok přidáme stránku, kam chceme uživatele přesměrové poté, co vyplní e-mail. Kód uložíme do šablony `password_reset_done.html`.
 
 ```html
 {% extends "base.html" %}
@@ -44,7 +44,7 @@ Nyní můžeme znovu vyzkoušet reset mailu. Pokud máme správně zkopírované
 
 # Rozšíření modelu uživatele
 
-U uživatele chceme často evidovat více informací, než kolik umožňuje klasický `User` model. U firemních aplikací je často potřeba uložit oddělení, telefonní číslo, pobočku či nadřízeného zaměstnance, u běžných komerčních aplikací pak třeba doručovací adresu, odkazy na profily na sociálních sítích atd.
+U uživatele chceme často evidovat více informací, než kolik umožňuje klasický `User` model. U firemních aplikací je často potřeba uložit oddělení, telefonní číslo, pobočku či nadřízeného zaměstnance, u běžných komerčních aplikací (např. e-shopu) pak třeba doručovací adresu, odkazy na profily na sociálních sítích atd.
 
 Django nabízí několik možností, jak rozšířit možnosti modelu `User`. Jednou z nich je vytvoření vlastní verze modelu, to je ale používáno především v situaci, kdy máme specifické požadavky (např. provádíme import uživatelů z jiné databáze). Pokud náme jde o přidání dodatečných polí, je možné přidat samostatný model (např. `Employee`) a k němu přidat vazbu `OneToOne` na model `Employee`. Dále k modelu `Employee` přidáme oddělení a telefonní číslo.
 
@@ -96,6 +96,15 @@ class EmployeeUpdateView(LoginRequiredMixin, UpdateView):
 
 ## Nepovinné čtení na doma - kombinace úprav obou modelů
 
+Uvažujme trochu složitější zadání. Nyní chceme umožnit uživateli úpravu údajů v modelu `User` i `Employee` na jedné stránce. V takovém případě už za nás `UpdateView` celý problém nevyřeší, protože to počítá s úpravou jednoho záznamu.
+
+Začneme s tím, že si vytvoříme formuláře jako třídy v souboru `forms.py`. Vytvoříme samostatný formulář pro úpravu údajů v modelu `User` a samostatný formulář pro úpravu údajů v modelu `Employee`. V Django můžeme používat dva typy formulářů:
+
+- obecné, které dědí od třídy `Form` a nemusí být napojeny na žádný model,
+- formuláře zaměřené na úpravu dat v modelech, které dědí od třídy `ModelForm`.
+
+V našem případě je vhodnější použití `ModelForm`. Vytvoříme nejprve třídu `UserForm` a do ní vložíme "vnořenou" třídu `Meta`, které nastavíme atributy `model` a `fields`. Nastavení hodnot těchto atributů má stejnou logiku, jako mělo jejich nastavení přímo na pohled.
+
 ```py
 from django.forms import ModelForm
 from crm.models import Employee
@@ -105,15 +114,23 @@ from django.contrib.auth.models import User
 class UserForm(ModelForm):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'email')
+        fields = ['first_name', 'last_name', 'email']
 
 class EmployeeForm(ModelForm):
     class Meta:
         model = Employee
-        fields = ('department', 'phone_number')
+        fields = ['department', 'phone_number']
 ```
 
+Nyní upravíme pohled `EmployeeUpdateView`. Odebereme nejprve atribut `fields` a nahradíme ho atributem `form_class`, kde použijeme formulář `EmployeeForm`. Tím máme vyřešené úpravy dat v modelu `Employee`. Následně musíme zařídit zobrazení formuláře na úpravu dat v modelu `User`. 
+
+Přidáme metodu `get_context_data()`. Kontext je vlastně jen slovník, který obsahuje seznam proměnných, které jsou k dispozici uvnitř šablony. My nejprve necháme vytvořit kontext metodou `get_context_data()` mateřské třídy `UpdateView` (abychom nepřišli o proměnnou `form`, kde bude vložen formulář `EmployeeForm`) a následně vložíme klíč `user_form`, který bude obsahovat formulář `UserForm`. Formuláři `UserForm` při vytváření přiřadíme jako parametr `instance` aktuálně přihlášeného uživatele, kterého opět zjistíme z atributu `request.user`.
+
+Dále se musíme postarat o uložení výsledných hodnot. K tomu můžeme využít metodu `post()`, která je zavolána vždy, když uživatel uloží formulář. Při ukládání opět nejprve vytvoříme instanci třídy `UserForm`, které navíc kromě parametru `instance` dáme slovník hodnot, který obsahuje data zadaná uživatelem. Slovník je opět součástí objektu `request`, konkrétně atributu `request.POST`. Dále provedeme kontrolu, že je formulář vyplněný korektně, k čemuž slouží metody `is_valid()`. Pokud tato metoda vrátí hodnotu `True`, provedeme uložení změn pomocí metody `save()`.
+
 ```py
+from crm.forms import EmployeeForm, UserForm
+
 class EmployeeUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "employee/update_employee.html"
     form_class = EmployeeForm
@@ -134,8 +151,24 @@ class EmployeeUpdateView(LoginRequiredMixin, UpdateView):
         return super().post(request, *args, **kwargs)
 ```
 
+Poslední změna se týká šablony `update_employee.html`, do které přidáme vložení formuláře pomocí `{{ user_form.as_p }}`.
+
+```py
+{% extends "base.html" %}
+{% block content %}
+<h1>Create new company</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ user_form.as_p }}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Uložit</button>
+</form>
+{% endblock %}
+```
 
 # Zprávy
+
+Pokud uživatel provede nějakou akci (např. upraví nějaký záznam), určitě uvítá, pokud ho informujeme o úspěšném uložení jím provedených změn. Tyto zprávy v rámci Django označujeme jako `messages`. To, aby pohled uměl se zprávami pracovat, zařídíme tím, že mu mezi mateřské třídy přidáme `SuccessMessageMixin`. Mateřský pohled `UpdateView` umí se zprávami již pracovat, pouze mu tedy musíme říct, jako zprávu má zobrazit, pokud došlo k úspěšné úpravě záznamu. To uděláme pomocí atributu `success_message`.
 
 ```py
 from django.contrib.messages.views import SuccessMessageMixin
@@ -150,38 +183,29 @@ class EmployeeUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
         return self.request.user.employee
 ```
 
+Následně musíme zařídit zobrazení zprávy v šabloně, a to především její správné naformátování. Framework Bootstrap má komponentu [Alerts](https://getbootstrap.com/docs/4.0/components/alerts/), která slouží ke stejnému účelu, tj. k zobrazení zpráv. U zpráv rozlišujeme především jejich typ, podle kterého je zpráva barevně vyznačena. Správnou třídu pak zvolíme pomocí třídy.
+
+Zpráv teoreticky může být více, proto jsou uloženy v seznamu `messages`. Začneme kontrolou, zda v seznamu vůbec nějaká zpráva je, což zařídíme pomocí podmínky `{% if messages %}`. Poté pomocí cyklu projdeme všechny zprávy k zobrazení pomocí cyklu `for`. Každou právu vložíme do tagu `<div>`, který musí mít nastavenou třídu `alert` a následně třídu pro příslušný typ zprávy. Ten je uložený v atributu `tag` dané zprávy, tj. zobrazíme ho pomocí `{{ message.tags }}`.
+
 ```html
 {% if messages %}
-<ul class="messages">
-    {% for message in messages %}
-    <div class="alert alert-primary {{ message.tags }}" role="alert">
-        {{ message }}
-    </div>
-    {% endfor %}
-</ul>
+{% for message in messages %}
+<div class="alert {{ message.tags }}" role="alert">
+    {{ message }}
+</div>
+{% endfor %}
 {% endif %}
 ```
 
-https://getbootstrap.com/docs/4.0/components/alerts/
+Správná třída není vložena automaticky, ale na základě nastavení. Do souboru `settings.py` vložíme slovník `MESSAGE_TAGS`, který má jako klíče typy zpráv a jako hodnoty tagy, které jsou následně "přilepeny" na každou ze zpráv dle jejího typu. Zatím používáme pouze typ `messages.SUCCESS` a tomu nastavíme hodnotu `alert-success`, což je vhodná třída dle dokumentace frameworku Bootstrap.
 
 ```py
 from django.contrib.messages import constants as messages
 
 MESSAGE_TAGS = {
-    messages.DEBUG: 'alert-secondary',
-    messages.INFO: 'alert-info',
     messages.SUCCESS: 'alert-success',
-    messages.WARNING: 'alert-warning',
-    messages.ERROR: 'alert-danger',
 }
 ```
 
-https://ordinarycoders.com/blog/article/django-messages-framework
+Pokud byste rovnou chtěli přidat i další třídy, můžete si zkopírovat slovník například ze článku [How to use Django Messages Framework](https://ordinarycoders.com/blog/article/django-messages-framework).
 
-# Překlady
-
-# Import dat
-
-# Requirements
-
-# Git
