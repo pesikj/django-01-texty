@@ -46,13 +46,12 @@ Nyní můžeme znovu vyzkoušet reset mailu. Pokud máme správně zkopírované
 
 U uživatele chceme často evidovat více informací, než kolik umožňuje klasický `User` model. U firemních aplikací je často potřeba uložit oddělení, telefonní číslo, pobočku či nadřízeného zaměstnance, u běžných komerčních aplikací (např. e-shopu) pak třeba doručovací adresu, odkazy na profily na sociálních sítích atd.
 
-Django nabízí několik možností, jak rozšířit možnosti modelu `User`. Jednou z nich je vytvoření vlastní verze modelu, to je ale používáno především v situaci, kdy máme specifické požadavky (např. provádíme import uživatelů z jiné databáze). Pokud náme jde o přidání dodatečných polí, je možné přidat samostatný model (např. `Employee`) a k němu přidat vazbu `OneToOne` na model `Employee`. Dále k modelu `Employee` přidáme oddělení a telefonní číslo.
+Django nabízí několik možností, jak rozšířit možnosti modelu `User`. Jednou z nich je vytvoření vlastní verze modelu, to je ale používáno především v situaci, kdy máme specifické požadavky (např. provádíme import uživatelů z jiné databáze). Pokud náme jde o přidání dodatečných polí, je možné přidat samostatný model (např. `Employee`) a k němu přidat vazbu `OneToOne` na model `Employee`. Dále k modelu `Employee` přidáme oddělení (jako řetězec).
 
 ```py
 class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     department = models.CharField(max_length=100, blank=True)
-    phone_number = models.CharField(max_length=20, blank=True)
 ```
 
 Záznam modelu `Employee` by v ideálním případě měl být vytvořen při vytvoření záznamu mudelu `User`. To můžeme zařídit automaticky pomocí **signálů**. Signály jsou vysílány při různých operacích (např. uložení záznamu) a pokud se přihlásíme k odběru signálu, můžeme při operaci vždy provést nějakou akci. Vytvoříme tedy funkci `create_user_profile`, kterou označíme tzv. **dekorátorem** `@receiver` (přijímač). Funkce `create_user_profile()` bude mít parametry `sender` (odesílatel signálu), `instance` (upravovaný záznam), `created` (pravdivostní hodnota, která udává, jestli došlo k vytvoření nebo úpravě již existujícího záznamu) a pro případné další parametry je přítomen `**kwargs`.
@@ -87,7 +86,7 @@ Nejčastější případ úpravy dat o uživateli je, že si data upravuje sám 
 ```py
 class EmployeeUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "employee/update_employee.html"
-    fields = ['department', 'phone_number']
+    fields = ['department']
     success_url = reverse_lazy("employee_update")
 
     def get_object(self, queryset=None):
@@ -119,7 +118,7 @@ class UserForm(ModelForm):
 class EmployeeForm(ModelForm):
     class Meta:
         model = Employee
-        fields = ['department', 'phone_number']
+        fields = ['department']
 ```
 
 Nyní upravíme pohled `EmployeeUpdateView`. Odebereme nejprve atribut `fields` a nahradíme ho atributem `form_class`, kde použijeme formulář `EmployeeForm`. Tím máme vyřešené úpravy dat v modelu `Employee`. Následně musíme zařídit zobrazení formuláře na úpravu dat v modelu `User`. 
@@ -175,7 +174,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 
 class EmployeeUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     template_name = "employee/update_employee.html"
-    fields = ['department', 'phone_number']
+    fields = ['department']
     success_url = reverse_lazy("employee_update")
     success_message = "Data was updated successfully"
 
@@ -209,3 +208,13 @@ MESSAGE_TAGS = {
 
 Pokud byste rovnou chtěli přidat i další třídy, můžete si zkopírovat slovník například ze článku [How to use Django Messages Framework](https://ordinarycoders.com/blog/article/django-messages-framework).
 
+
+# Úkoly
+
+## Zpráva o vytvoření
+
+Stejně jako `UpdateView` je i `CreateView` vybaven na odesílání zpráv. Přidej zprávu o vytvoření k pohledu `OpportunityCreateView` a `CompanyCreateView`.
+
+## Další údaje o zaměstnanci
+
+Přidej k zaměstnanci další údaje, které o něm chceme uchovávat. Jedním z nich bude telefonní čislo (atribut pojmenuj jako `phone_number` a vytvoř ho jako textové pole), číslo kanceláře (`office_number`, opět textová hodnota) a nadřízeného (`manager`, vazba na model `User`). Umožni uživatelu úpravy všech těchto atributů.
