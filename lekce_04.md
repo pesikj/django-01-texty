@@ -217,4 +217,21 @@ Stejně jako `UpdateView` je i `CreateView` vybaven na odesílání zpráv. Při
 
 ## Další údaje o zaměstnanci
 
-Přidej k zaměstnanci další údaje, které o něm chceme uchovávat. Jedním z nich bude telefonní čislo (atribut pojmenuj jako `phone_number` a vytvoř ho jako textové pole), číslo kanceláře (`office_number`, opět textová hodnota) a nadřízeného (`manager`, vazba na model `User`). Umožni uživatelu úpravy všech těchto atributů.
+Přidej k zaměstnanci další údaje, které o něm chceme uchovávat. Jedním z nich bude telefonní čislo (atribut pojmenuj jako `phone_number` a vytvoř ho jako textové pole), číslo kanceláře (`office_number`, opět textová hodnota) a nadřízeného (`manager`, vazba na model `Employee`, název modelu musí být v uvozovkách). Umožni uživatelu úpravy všech těchto atributů.
+
+## Bonus: Notifikace
+
+Často uživatelé chtějí dostávat notifikace o nějaké události, např. zákazník e-shopu chce dostat zprávu o odeslání balíku. Uvažujme, že budeme chtít posílat informace o nově založených obchodních příležitostech na mail vedoucího obchodního oddělení. K tomu využijeme opět signály. Přidej signál, jehož odesílatelem (`sender`) bude model `Opportunity` a vytvoř vhodně pojmenovanou metodu (např. `create_opportunity`, ale název není důležitý). Podmínku `if created:` můžeš klidně překopírovat, protože chceme informovat pouze o založení, nikoli o úpravách. Do podmínky vlož funkci `send_email`. Je nutné provést její import takto:
+
+```py
+from django.core.mail import send_mail
+```
+
+Funkci zadej 4 parametry:
+
+1. předmět e-mailu,
+1. obsah e-mailu - zadej ho jako prostý text, můžeš tam třeba vložit název firmy, které se obchodní případ týká, k tomu se dostateš přes proměnnou `instance`,
+1. adresu odesílatele, tu nastav třeba na `robot@mojefirma.cz` nebo libovolnou jinou,
+1. seznam příjemců - do něj vlož jednoho příjemce, a to `sales_manager@czechitas.cz` (pozor, musí to opravdu být seznam!).
+
+Poté zkus založit obchodní případ a zkontroluj, že ve službě Mailtrap se e-mail zobrazí.
