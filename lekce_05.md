@@ -156,9 +156,27 @@ Je samozřejmě též dobrou praxí, zvláště u aktivně vyvíjených projekt�
 
 Přidej nyní automatické testy (můžeš je vložit jako další metody do třídy `CRMViewTests`, pouze nezapomeň dát na začátek názvu slovo `test`), které ověří, že obsluha obchodních případů funguje.
 
-Přidej automatický test, který ověří, že jde přidat obchodní případ. Použij metodu `post`, do které vlož hodnoty všech povinných polí (můžeš samozřejmě přidat i nepovinná pole). Ověř, že je vrácen kód 200. Ověř, že v databázi je nyní nový obchodní případ.
+- Přidání obchodního případu by mělo vyžadovat oprávnění `add_opportunity`. V metodě `setUp()` můžeš toto oprávnění uživateli přidělit:
+
+```py
+# Tento řádek s importem je potřeba přidat
+from django.contrib.auth.models import Permission
+
+class CRMViewTests(TestCase):
+    def setUp(self):
+        # Tři řádky níže už bys v metodě setUp() měl(a) mít
+        self.client = Client()
+        self.user = User.objects.create_user('jirka', 'jirka@mojefirma.cz', 'tajne-heslo')
+        Company.objects.create(name="Test company", phone_number="723 000000", identification_number="1000000")
+        # Tento řádek musíš přidat do své metody setUp()
+        self.user.user_permissions.add(Permission.objects.get(codename='add_opportunity'))
+```
+
+Přidej automatický test, který ověří, že jde přidat obchodní případ. Použij metodu `post`, do které vlož hodnoty všech povinných polí (můžeš samozřejmě přidat i nepovinná pole). Do polí `company` vlož hodnotu 1 (primární klíč vytvořeného obchodního případu) a do pole `sales_manager` též hodnotu 1 (primární klíč vytvořeného uživatele).
+
+Ověř, že je vrácen kód 200. Ověř, že v databázi je nyní nový obchodní případ.
 
 ## Bonus 1
 
-Do administrátorského rozhraní ke každému obchodnímu případu přidej název firmy, na kterou je navázán. To můžeš udělat přidáním metody `__str__()` k modelu `Company`. Další možností je přidat pole `company`, následně přidat dvě podtržíka a za ně název pole, tj. `name`.
+Do administrátorského rozhraní ke každému obchodnímu případu přidej název firmy, na kterou je navázán. To můžeš udělat přidáním metody `__str__()` k modelu `Company`. 
 
