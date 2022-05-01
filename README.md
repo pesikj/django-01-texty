@@ -4,7 +4,7 @@
 * [Lekce 2 (CSS a Bootstrap)](lekce_02.md)
 * [Lekce 3 (Uživatelské účty)](lekce_03.md)
 * [Lekce 4 (Registrace uživatelů, rozšíření modelu uživatele, zprávy)](lekce_04.md)
-* Lekce 5 (Úprava administrátorského rozhraní, automatické testy, requirements)
+* [Lekce 5 (Úprava administrátorského rozhraní, automatické testy, requirements)](lekce_05.md)
 * Lekce 6 (Modul django-crispy-forms, překlady, import dat)
 * Lekce 7 (Sítě, HTTP protokol, deployment)
 * Lekce 8 (Django REST Framework, JavaScript, autocomplete)
