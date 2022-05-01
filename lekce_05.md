@@ -59,7 +59,7 @@ V administrátorském rozhraní nyní přibylo vyhledávací políčko, které v
 
 Automatické testy jsou klíčovou součástí dnešních aplikací. Moderním trendem je totiž poskytovat nové funkce a nové verze uživatelům okamžitě. V případě některých aplikací tak dochází k nahrání nové verze i několikrát denně. Při takové frekvenci změn by bylo nereálné (případně příliš drahé) testovat aplikaci ručně. I drobná změna v aplikaci se totiž může projevit nečekanou chybou v úplně jiné části aplikace, proto částečné "proklikání" nových funkcí nezaručuje, že změny aplikaci nijak nerozbily.
 
-Django nabízí vlastní nástroj na automatické testování. Logika testu se skládá z následujících dvou kroků:
+Django nabízí vlastní nástroj na automatické testování. Zaměříme se především na testování pohledů. Logika testu pohledu se skládá z následujících dvou kroků:
 
 1. nasimuluji nějakou uživatelskou akci (např. otevření stránky nebo vyplnění formuláře),
 1. zkontroluji, zda výstup, který Django vrací, odpovídá tomu, co by mělo být vráceno.
@@ -92,7 +92,11 @@ Začneme testem otevření formuláře na vytvoření firmy. U této akce zkontr
         self.assertEqual(response.status_code, 200)
 ```
 
-Sofistikovanějším testem je test vytvoření společnosti. Tentokrát simulujeme akci POST, tj. voláme metodu `self.client.post()`, do které jako slovník vložíme hodnoty, jejichž vyplnění do formuláře simulujeme. Opět zkontrolujeme, zda je vrácen kód 200.
+Test spustíme příkazem `python manage.py test`. Django projde všechny třídy, které dědí od `TestCase`, a spustí všechny jejich metody, které začínají slovem `test`. Ke třídě můžeme přidat i metody, které se jmenují jinak, ale ty nebudou automaticky spuštěny (mohou to být např. metody na nějaké speciální připravné práce). Každé spuštění testu je zpravidla **samostatné**, tj. pokud chceme testovat dva různé pohledy, je lepší na to použít dvě různé metody.
+
+Důležité je, že každý test je zcela **samostatný**. Pokud tedy například v jedné metodě vytvoříme firmu, ta firma nebude dostupná v jiné metodě, která testuje pohled na seznam firem. Pokud bychom chtěli otestovat pohled na seznam firem, můžeme si vytvořit firmu ručně v rámci "přípravných prací".
+
+Vytvořme nyní sofistikovanější test, který otevěří, že funguje vytvoření společnosti pomocí vyplnění formuláře. Tentokrát simulujeme akci POST, tj. voláme metodu `self.client.post()`, do které jako slovník vložíme hodnoty, jejichž vyplnění do formuláře simulujeme. Opět zkontrolujeme, zda je vrácen kód 200. Dále zkontrolujeme, že je firma v databázi, tj. počet záznamů v databázi je 1. Pro větší specifičnost testu by bylo možné například testovat, kolik je v databázi firem s konkrétním `identification_number`. Tím bychom nemuseli test upravovat, pokud v rámci příprav přidáme vytvoření firmy.
 
 ```py
     def test_post_company_create(self):
@@ -107,7 +111,7 @@ Sofistikovanějším testem je test vytvoření společnosti. Tentokrát simuluj
         self.assertEqual(Company.objects.count(), 1)
 ```
 
-Testovat můžeme i zabezpečení aplikace. Uvažujme, že se uživatel nepřihlásí. V takovém případě by neměl mít možnost například si otevřít stránku se seznamem firem. Pokud by se o to pokusil, měl by být přesměrován na stránku s přihlašovacím formulářem. To můžeme testovat pomocí metody `assertRedirects`, která kontroluje, zda byl uživatel přesměrován na správnou cílovou straánku.
+Testovat můžeme i zabezpečení aplikace. Uvažujme, že se uživatel nepřihlásí. V takovém případě by neměl mít možnost například si otevřít stránku se seznamem firem. Pokud by se o to pokusil, měl by být přesměrován na stránku s přihlašovacím formulářem. To můžeme testovat pomocí metody `assertRedirects()`, která kontroluje, zda byl uživatel přesměrován na správnou cílovou straánku. Přesnou adresu cílové stránky můžeme najít, pokud si stejnou akci vyzkoušíme v prohlížeči. Kromě adresy samotné přihlašovací stránky, tj. `/accounts/login/`, je v adrese ještě parametr `next`, který zajistí, že po přihlášení je uživatel "vrácen" na stránku, která ho na přihlašovací formulář přesměrovala.
 
 ```py
    def test_company_list_not_signed(self):
@@ -115,23 +119,46 @@ Testovat můžeme i zabezpečení aplikace. Uvažujme, že se uživatel nepřihl
         self.assertRedirects(response, '/accounts/login/?next=/company/list')
 ```
 
-Testovat můžeme i obsah stránky. Zkusme nyní otestovat ještě pohled se seznamem firem.
+Testovat můžeme i obsah stránky. Zkusme nyní otestovat ještě pohled se seznamem firem. Do metody `setUp()` přidáme vytvoření firmy a následně pomocí metody `assertContains()` zkontrolujeme, že vrácená HTML stránka obsahuje název testovací firmy.
 
 ```py
     def setUp(self):
         self.client = Client()
         self.user = User.objects.create_user('jirka', 'jirka@mojefirma.cz', 'tajne-heslo')
-        Company.objects.create(name="Test company", phone_number="723 000000", identification_number="1000000")
+        Company.objects.create(name="THE MAMA AI", phone_number="723 000000", identification_number="1000000")
 
     def test_company_list(self):
         self.client.login(username='jirka', password='tajne-heslo')
         response = self.client.get(reverse("company_list"))
-        self.assertContains(response, "Test company")
+        self.assertContains(response, "THE MAMA AI")
 ```
 
 # Závislosti
+
+Většina projektů v Pythonu (nejen webových) potřebuje před spuštěním doinstalovat nějaké moduly. Aby byla instalace co nejjednodušší, je dobrou praxí vkládat seznam potřebných modulů do souboru `requirements.txt` v nejvyšším adresáři aplikace. Ideální je přidat do seznamu moduly včetně čísla verze, které se píše za dva symboly rovná se. Tím je zajištěno, že projekt půjde spustit i po uvolnění nových verzí modulů, které už by s naším kódem nemusely být kompatibilní.
 
 ```
 Django==4.0.4
 python-decouple==3.6
 ```
+
+Je samozřejmě též dobrou praxí, zvláště u aktivně vyvíjených projektů, postupně přecházet (upgradovat) na nové verze.
+
+# Cvičení
+
+## Obchodní případy pro adminy
+
+- V administrátorském rozhraní uprav seznam obchodních případů tak, aby obsahovala pole `status` a `value`.
+- Umožni uživatelům filtrování obchodních případů podle jejich statusu (pole `status`).
+- Umožni uživatelům vyhledávání obchodních případů podle obsahu podle `description`.
+
+## Test vytváření obchodních případů
+
+Přidej nyní automatické testy (můžeš je vložit jako další metody do třídy `CRMViewTests`, pouze nezapomeň dát na začátek názvu slovo `test`), které ověří, že obsluha obchodních případů funguje.
+
+Přidej automatický test, který ověří, že jde přidat obchodní případ. Použij metodu `post`, do které vlož hodnoty všech povinných polí (můžeš samozřejmě přidat i nepovinná pole). Ověř, že je vrácen kód 200. Ověř, že v databázi je nyní nový obchodní případ.
+
+## Bonus 1
+
+Do administrátorského rozhraní ke každému obchodnímu případu přidej název firmy, na kterou je navázán. To můžeš udělat přidáním metody `__str__()` k modelu `Company`. Další možností je přidat pole `company`, následně přidat dvě podtržíka a za ně název pole, tj. `name`.
+
