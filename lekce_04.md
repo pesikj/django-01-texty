@@ -215,9 +215,56 @@ Pokud byste rovnou chtěli přidat i další třídy, můžete si zkopírovat sl
 
 Stejně jako `UpdateView` je i `CreateView` vybaven na odesílání zpráv. Přidej zprávu o vytvoření k pohledu `OpportunityCreateView` a `CompanyCreateView`.
 
+### Řešení
+
+Je potřeba k rodičovským třídám přidat `SuccessMessageMixin` a poté atribut `success_message` s nějakým textem.
+
+```py
+class OpportunityCreateView(PermissionRequiredMixin, SuccessMessageMixin, CreateView):
+    permission_required = "crm.add_opportunity"
+    model = models.Opportunity
+    template_name = "company/create_company.html"
+    fields = ["company", "sales_manager", "description", "status", "value"]
+    success_url = reverse_lazy("index")
+    success_message = "Opportunity was created successfully."
+
+class CompanyCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
+    model = models.Company
+    template_name = "company/create_company.html"
+    fields = ["name", "status", "phone_number", "email", "identification_number"]
+    success_url = reverse_lazy("index")
+    success_message = "Company was created successfully."
+```
+
 ## Další údaje o zaměstnanci
 
 Přidej k zaměstnanci další údaje, které o něm chceme uchovávat. Jedním z nich bude telefonní čislo (atribut pojmenuj jako `phone_number` a vytvoř ho jako textové pole), číslo kanceláře (`office_number`, opět textová hodnota) a nadřízeného (`manager`, vazba na model `Employee`, název modelu musí být v uvozovkách). Umožni uživatelu úpravy všech těchto atributů.
+
+### Řešení
+
+Ke třídě `Employee` přidáme jednotlivé atributy.
+
+```py
+class Employee(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    department = models.CharField(max_length=100, blank=True, null=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    office_number = models.CharField(max_length=10, blank=True, null=True)
+    manager = models.ForeignKey("Employee", on_delete=models.SET_NULL, null=True, blank=True)
+```
+
+Následně je potřeba spustit tyto příkazy `python manage.py makemigrations` a `python manage.py migrate`. Aby si uživatel mohl hodnoty upravit, je potřeba je přidat do seznamu v atributu `fields`.
+
+```py
+class EmployeeUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
+    fields = ["department", "phone_number", "office_number", "manager"]
+    template_name = "employee/update_employee.html"
+    success_url = reverse_lazy("index")
+    success_message = "Data was updated successfully."
+
+    def get_object(self, queryset=None):
+        return self.request.user.employee
+```
 
 ## Bonus: Notifikace
 
@@ -235,3 +282,17 @@ Funkci zadej 4 parametry:
 1. seznam příjemců - do něj vlož jednoho příjemce, a to `sales_manager@czechitas.cz` (pozor, musí to opravdu být seznam!).
 
 Poté zkus založit obchodní případ a zkontroluj, že ve službě Mailtrap se e-mail zobrazí.
+
+### Řešení
+
+Řešení bonusového příkladu vypadá takto:
+
+- Odesílatelem je modul `Opportunity`, protože na jeho vytvoření reagujeme.
+- Uvnitř metody `create_opportunity` získáme název firmy (či jakoukoli jinou informaci z modelu `Opportunity`) prostřednictvím hodnoty parametru `instance`. Pokud chceme název firmy, napíšeme `instance.company.name`.
+
+```py
+@receiver(post_save, sender=Opportunity)
+def create_opportunity(sender, instance, created, **kwargs):
+    if created:
+        send_mail("Opporunity was created", instance.company.name, "test@mojefirma.cz", ["manazer@mojefirma.cz"])
+```
