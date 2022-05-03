@@ -231,3 +231,38 @@ class Opportunity(models.Model):
 
 Do administrátorského rozhraní ke každému obchodnímu případu přidej název firmy, na kterou je navázán. To můžeš udělat přidáním metody `__str__()` k modelu `Company`. 
 
+### Řešení
+
+Přidáme metodu `__str()__`, která obecně říká, jak převést objekt na řetězec. V tomto případě je firma převedená na řetězec tak, že se použije její název (`name`).
+
+```py
+class Company(models.Model):
+    status_choices = (
+        ("N", "New"),
+        ("L", "Lead"),
+        ("O", "Opportunity"),
+        ("C", "Active Customer"),
+        ("FC", "Former Customer"),
+        ("I", "Inactive")
+    )
+
+    name = models.CharField(max_length=50)
+    status = models.CharField(max_length=2, default="N", choices=status_choices)
+    phone_number = models.CharField(max_length=20, null=True, blank=True)
+    email = models.CharField(max_length=50, null=True, blank=True)
+    identification_number = models.CharField(max_length=100)
+    address = models.ForeignKey("Address", on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return self.name
+```
+
+Jako druhý krok přidáme pole `company` do seznamu `list_display`.
+
+```py
+class OpportunityAdmin(admin.ModelAdmin):
+    list_display = ["status", "value", "company"]
+    list_filter = ["status"]
+    search_fields = ["description"]
+admin.site.register(models.Opportunity, OpportunityAdmin)
+```
