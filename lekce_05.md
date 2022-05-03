@@ -152,6 +152,18 @@ Je samozřejmě též dobrou praxí, zvláště u aktivně vyvíjených projekt�
 - Umožni uživatelům filtrování obchodních případů podle jejich statusu (pole `status`).
 - Umožni uživatelům vyhledávání obchodních případů podle obsahu podle `description`.
 
+### Řešení příkladu
+
+Pokud u modelu nemáte pole `value`, které reprezentuje hodnotu potenciálního obchodního případu, tak si je prosím doplňte. Pokud máte pole pojmenované jinak, tak použijte váš název.
+
+```py
+class OpportunityAdmin(admin.ModelAdmin):
+    list_display = ["status", "value"]
+    list_filter = ["status"]
+    search_fields = ["description"]
+admin.site.register(models.Opportunity, OpportunityAdmin)
+```
+
 ## Test vytváření obchodních případů
 
 Přidej nyní automatické testy (můžeš je vložit jako další metody do třídy `CRMViewTests`, pouze nezapomeň dát na začátek názvu slovo `test`), které ověří, že obsluha obchodních případů funguje.
@@ -175,6 +187,45 @@ class CRMViewTests(TestCase):
 Přidej automatický test, který ověří, že jde přidat obchodní případ. Použij metodu `post`, do které vlož hodnoty všech povinných polí (můžeš samozřejmě přidat i nepovinná pole). Do polí `company` vlož hodnotu 1 (primární klíč vytvořeného obchodního případu) a do pole `sales_manager` též hodnotu 1 (primární klíč vytvořeného uživatele).
 
 Ověř, že je vrácen kód 200. Ověř, že v databázi je nyní nový obchodní případ.
+
+### Řešení příkladu
+
+Toto je jedno z možných řešení. Do slovníku `data` můžete samozřejmě přidat i nějaké nepovinné hodnoty.
+
+```py
+def test_post_opportunity_create(self):
+    self.client.login(username="jirka", password="tajne-heslo")
+    response = self.client.post(reverse("opportunity_create"),
+                                data={"company": "1",
+                                        "sales_manager": "1",
+                                        "status": "1"},
+                                follow=True)
+    self.assertEqual(response.status_code, 200)
+    self.assertEqual(Opportunity.objects.count(), 1)
+```
+
+Níže vidíte, jak je nastavený model `Opportunity`, pro který tento test funguje. Povinná jsou pouze pole `company`, `sales_manager` a `status`, ostatní mají nastaveno `blank=True`, mohou tedy být nevyplněná.
+
+Atribut `status_choices` je pouze číselník, není to pole, při vyplňování formuláře si ho tedy nevšímáme.
+
+```py
+class Opportunity(models.Model):
+    status_choices = (
+        ("1", "Prospecting"),
+        ("2", "Analysis"),
+        ("3", "Proposal"),
+        ("4", "Negotiation"),
+        ("5", "Closed Won"),
+        ("0", "Closed Lost")
+    )
+
+    company = models.ForeignKey(Company, on_delete=models.RESTRICT)
+    sales_manager = models.ForeignKey(User, on_delete=models.RESTRICT)
+    primary_contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=2, default="1", choices=status_choices)
+    value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+```
 
 ## Bonus 1
 
