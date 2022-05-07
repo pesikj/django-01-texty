@@ -4,14 +4,12 @@
 * [Lekce 2 (CSS a Bootstrap)](lekce_02.md)
 * [Lekce 3 (Uživatelské účty)](lekce_03.md)
 * [Lekce 4 (Registrace uživatelů, rozšíření modelu uživatele, zprávy)](lekce_04.md)
-* [Lekce 5 (Úprava administrátorského rozhraní, automatické testy, requirements)](lekce_05.md)
-* Lekce 6 (Modul django-crispy-forms, překlady, import dat)
+* [Lekce 5 (Úprava administrátorského rozhraní, automatické testy)](lekce_05.md)
+* [Lekce 6 (Překlady, import dat, requirements, výchozí hodnoty, modul django-crispy-forms)](lekce_06.md)
 * Lekce 7 (Sítě, HTTP protokol, deployment)
-* Lekce 8 (Django REST Framework, JavaScript, autocomplete)
+* Lekce 8 (Django REST Framework, JavaScript, autocomplete, HTML editor)
 * Lekce 9 (Modul django-tables2, filtry)
-* Lekce 10 (Nahrávání souborů, statické soubory, cookies a relace)
-* Lekce 11 (Grafy a vizualizace, odesílání e-mailů)
-* Lekce 12 (HTML soubory)
+* Lekce 10 (Nahrávání souborů, statické soubory, cookies a relace, grafy a vizalizace)
 
 
 # Práce s Gitem
