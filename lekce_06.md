@@ -31,6 +31,8 @@ class CompanyCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     success_message = _("Company created!")
 ```
 
+Všimni si, že v importu je část `as _`. Tím je funkce `gettext` pro potřeba aktuálního souboru přejmenovaná na `_`. Tato úprava, kterou doporučují i vývojáři Django v oficiální dokumentaci, je čistě estetická a pomáhá větší přehlednosti kódu.
+
 Před vytvořením souboru s překlady musíme upravit nastavení, aby bylo jasné, kde budou překlady uloženy. Řekněme, že naše překlady budou v adresáři `locale` v kořenovém adresáři projektu. To provedeme vložením hodnoty `LOCALE_PATHS` do souboru `settings.py`.
 
 ```py
@@ -81,6 +83,8 @@ Po kompilace zpráv je bohužel nutné restartovat Django server, tj. v terminá
 python manage.py runserver
 ```
 
+## Nastavení jazyka
+
 Nyní se nabízí otázka, jak vlastně Django pozná, který jazyk má zobrazit? Existují 4 možnosti:
 
 - z URL adresy,
@@ -126,15 +130,25 @@ Následně můžeme do nějaké stránky (např. na titulní stránku) vložit n
 
 Uložení si můžeme ověřit v prohlížeči. Stačí otevřít vývojářské nástroje ve webovém prohlížeči, následně vybrat záložku `Application`, v menu vlevo pak rozkliknout `Cookies` a kliknout na `http://localhost:8000/`. Pokud jsme uložili volbu jazyka, měli bychom ve sloupci `name` vidět `django_language` a ve stejném řádku ve sloupci `value` hodnotu `cs`.
 
-Zatím jsme vyřešili pouze překlady textů v pohledech, zajímavější je ale zajistit překlady textů v šablonách.
+## Překlady v šablonách
+
+Zatím jsme vyřešili pouze překlady textů v pohledech, zajímavější je ale zajistit překlady textů v šablonách. Důležité je vždy do šablony (ideálně na začátek, **pod** tag `{% extends %}`, pokud se v šabloně vyskytuje) vložit tag `{% load i18n %}`. To nám umožní využívat tag `{% translate %}`. Do něj vždy vložíme řetězec, který je určený k překladu, např. `{% translate "Home" %}`.
 
 ```html
 {% load i18n %}
 
 <a class="nav-link" href="{% url 'index' %}">{% translate "Home" %}</a>
 <a class="nav-link" href="{% url 'company_create' %}">{% translate "Create Company" %}</a>
+<a class="nav-link" href="{% url 'company_list' %}">{% translate "Companies" %}</a>
+```
+
+Následně opět zadáme příkaz
 
 ```
+django-admin makemessages -l cs
+```
+
+Nové řetězce se objeví v souboru `django.po` a můžeme k nim přidat překlady.
 
 ```
 #: .\crm\templates\base.html:25
@@ -144,8 +158,190 @@ msgstr "Domů"
 #: .\crm\templates\base.html:28
 msgid "Create Company"
 msgstr "Vytvořit společnost"
+
+#: .\crm\templates\base.html:31
+msgid "Companies"
+msgstr "Společnosti"
 ```
+
+Poté provedeme kompilace zpráv příkazem
 
 ```
 django-admin compilemessages
 ```
+
+a restartujeme server.
+
+## Překlad polí u modelů
+
+V případě překladu názvů polí modelů je situace podobná, pouze použijeme funkci `gettext_lazy`. Ta zajistí načtení překladu až ve chvíli, kdy je řetězec skutečně použit, například při renderování (vykreslování) šablony.
+
+```py
+from django.utils.translation import gettext_lazy as _
+```
+
+Následně jako první parametr u polí přidáme název, který je opět opatřený podtržítkem, aby byl zajistěn překlad. Netýká se to pole `address`.
+
+```py
+    name = models.CharField(_("Name"), max_length=20)
+    status = models.CharField(_("Status"), max_length=2, default="N", choices=status_choices)
+    phone_number = models.CharField(_("Phone Number"),max_length=20, null=True, blank=True)
+    email = models.CharField(_("Email"),max_length=50, null=True, blank=True)
+    identification_number = models.CharField(_("Identification Number"),max_length=100)
+    address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True, blank=True)
+```
+
+Pole s cizím klíčem má totiž název stejný, jako navázaný model. Je tedy lepší rovnou přejmenovat celý model, a to pomocí vnořené třídy `Meta`. Název lze specifikovat pro jednotné i množné číslo, což jsou (asi, lingvisté nechť mě případně opraví :-) ) ve většině jazyků různá slova.
+
+```py
+class Address(models.Model):
+    street = models.CharField(max_length=200, blank=True, null=True)
+    zip_code = models.CharField(max_length=10, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        verbose_name = _("Address")
+        verbose_name_plural = _("Addresses")
+```
+
+Tím získáme i názvy políček u modelů česky.
+
+# Formuláře
+
+Nyní si pohrajeme s formuláři. U formulářu je častá validace, která zabrání tomu, aby uživatelé zadávali do polí nesmysl (např. záporné nákupy zboží, neúplná čísla bankovních účtů, nesmyslná data narození atd.). Ověření, zda je nějaká hodnota ve formuláři smysluplná, zajistíme pomocí metody `clean()`.
+
+## Validace formulářů
+
+My provedeme ověření, zda uživatel zadal IČO ve správné délce. Nejprve ale musíme vytvořit formulář.
+
+Vytvoříme formulář `CompanyForm` jako třídu, která dědí od třídy `ModelForm`. Do třídy přidáme vnořenou třídu `Meta`, která obsahuje dva atributy - `model` a `fields` (seznam polí). Hodnoty atributů nemusíme vymýšlet, ale můžeme je zkopírovat z pohledu `CompanyCreateView`.
+
+Následně přidáme metodu `clean_identification_number()`, která provede kontrolu IČO. Nejprve načteme hodnotu, kterou zadal uživatel, z pole `cleaned_data`. V něm jsou hodnoty zadané uživatelem. Následně provedeme kontrolu délky řetězce. Pokud je jiná než 8, vyvoláme tzv. výjimku `ValidationError` typu pomocí slova `raise`. Výjimka je událost, která je zpravidla důsledkem nějaké chyby a je signálem, že aktuálně prováděná operace by měla být přerušena. Vyvoláním výjimky tedy zabráníme tomu, aby byla firma se špatným IČO vložena do databáze, a místo toho je zvolen alternativní postup, což je zobrazení chyby ve formuláři. Uživatel následně bude mít možnost chybu opravit a pokusit se o uložení znovu.
+
+```py
+from django.forms import ModelForm, ValidationError
+from crm.models import Employee, Company
+
+class CompanyForm(ModelForm):
+    def clean_identification_number(self):
+        identification_number = self.cleaned_data['identification_number']
+
+        if len(identification_number) != 8:
+            raise ValidationError(_("The identification number has incorrect length."))
+        return identification_number
+
+    class Meta:
+        model = Company
+        fields = ["name", "status", "phone_number", "email", "identification_number"]
+```   
+
+Abychom provázali formulář a pohled, přidáme k pohledu `CompanyCreateView` atribut `form_class` a smažeme atributy `model` a `fields`, protože tyto hodnoty jsou načtené prostřednictvím formuláře.
+
+```py
+class CompanyCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
+    template_name = "company/create_company.html"
+    form_class  = CompanyForm
+    success_url = reverse_lazy("index")
+    # Translators: This message is shown after successful creation of a company
+    success_message = _("Company created!")
+```
+
+## Modul django-crispy-forms
+
+Pokud bychom chtěli výrazně upravit vzhled formuláře, můžeme použít modul `django-crispy-forms`. Ten umožní rozvrhnout formulář a nastavit mu konkrétní CSS třídy přímo ve třídě formuláře, což je většinou přehlednější než nastavení vzhledu v šabloně. K modulu `django-crispy-forms` existuje další užitečný modul, a to `crispy-bootstrap5`, který je vyladěný speciálně pro Bootstrap 5
+
+Moduly je potřeba nejprve nainstalovat, a to přes vývojové prostředí nebo příkazem
+
+```
+pip install django-crispy-forms
+pip install crispy-bootstrap5
+```
+
+Moduly musíme přidat do seznamu `INSTALLED_APPS`.
+
+```py
+INSTALLED_APPS = (
+    ...
+    "crispy_forms",
+    "crispy_bootstrap5",
+    ...
+)
+```
+
+Následně nastavíme konstanty `CRISPY_TEMPLATE_PACK` a `CRISPY_ALLOWED_TEMPLATE_PACKS`, též v souboru `settings.py`.
+
+```py
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+```
+
+Následně přidáme metodu `__init__()` ke třídě `CompanyForm`. Následně vkládáme třídy `Div()`, které vytváření HTML tagy `<div>` v samotné šabloně. Vytvoříme jeden tag `Div()`, kterému nastavíme atribut `css_class` na hodnotu `row` - ten symbolizuje jeden "řádek" v šabloně. Následně vložíme samostatné `Div()` pro každé pole formuláře. Na první místo vložíme název pole a dále jako parametr `css_class` vložíme třídu, která bude definovat šířku pole.
+
+```py
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, ButtonHolder, Submit, Div
+
+
+class CompanyForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Div(
+                Div("name", css_class="col-sm-4"),
+                Div("status", css_class="col-sm-2"),
+                Div("identification_number", css_class="col-sm-4"),
+                Div("email", css_class="col-sm-4"),
+                Div("phone_number", css_class="col-sm-4"),
+                css_class="row",
+            ),
+            ButtonHolder(
+                Submit('submit', 'Submit', css_class='button')
+            )
+        )
+
+```
+
+# Cvičení
+
+## Překlady
+
+Proveď překlad názvu polí a hlášky o úspěšném překladu u obchodních případů.
+
+Vyzkoušej tag `blocktranslate`, který může být využit k překladu delších textů. Níže je příklad jeho využití. Zkus tento tag s nějakým textem vložit na titulní stránku. Podívej se,
+jak se zobrazí v souboru s překlady a nějaký překlad mu vytvoř.
+
+{% blocktranslate %}
+You can place a long text here.
+For example, an introduction of your project, company etc.
+{% endblocktranslate %}
+
+
+## Validate čísla
+
+Do metody clean_identification_number přidej kontrolu, zda hodnota obsahuje pouze čísla. K tomu můžeš využít metodu `isdigit()`, kterou zavoláš pomocí tečkové notace, např. `retezec.isdigit()`. Metoda vrací hodnotu `True`, pokud řetězec obsahuje pouze čísla. 
+
+## Bonus: Validace e-mailu
+
+Ověř, že `email` obsahuje zavináč. To můžeš zařídit pomocí operátoru `in`, který využiješ v podmínce. Podobnou úlohu jsme si ukazovali v kurzu Úvod do programování 1. Pokud hodnota, kterou zadal uživatel, zavináč neobsahuje, upozorni ho na chybu. Pozor na to, že pole `email` je nepovinné. Pokud není vyplněno, je na jeho místě ve slovníku `cleaned_data` hodnota `None`. Zkontroluj nejprve, zda hodnota není `None` a přítomnost zavináče řeš až v případě, že e-mail byl vyplněn.
+
+Podmínku, zda byl vyplněn e-mail můžeš sestavit např. takto:
+
+```py
+    email = self.cleaned_data['email']
+    if email:
+        # Sem dopiš kontrolu zavináče
+        pass
+    return email
+```
+
+## Bonus: Validace telefonního čísla
+
+Důležitá jsou i telefonní čísla, která by měla mít správnou délku. Uvažuj následující dva formáty za správné:
+
+- formát `+420734123456` (tj. řetězec začíná mezinárodní předvolbou `+420` a dále obsahuje 9 čísel, celkem tedy `+` a 12 čísel),
+- formát `734123456` (tj. 9 čísel).
+
+Pokud uživatel nezadá číslo v platném formátu, vypiš chybu.
