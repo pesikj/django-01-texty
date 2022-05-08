@@ -308,16 +308,9 @@ class CompanyForm(ModelForm):
 
 ## Překlady
 
-Proveď překlad názvu polí a hlášky o úspěšném překladu u obchodních případů.
+Proveď překlad názvu textových polí a hlášky o úspěšném překladu u obchodních případů. Dále pomocí vnořené třídy `Meta` zařiď překlady modelu `Company` a `Contact`.
 
-Vyzkoušej tag `blocktranslate`, který může být využit k překladu delších textů. Níže je příklad jeho využití. Zkus tento tag s nějakým textem vložit na titulní stránku. Podívej se,
-jak se zobrazí v souboru s překlady a nějaký překlad mu vytvoř.
-
-{% blocktranslate %}
-You can place a long text here.
-For example, an introduction of your project, company etc.
-{% endblocktranslate %}
-
+Přelož možnosti stavu u společnosti. To provedeš stejně jako u jiných řetězců, pouze pozor na to, že musíš překládat pouze slovní názvy, nikoli zkratky (tj. pouze `New`, nikoli `N`).
 
 ## Validate čísla
 
@@ -341,7 +334,16 @@ Podmínku, zda byl vyplněn e-mail můžeš sestavit např. takto:
 
 Důležitá jsou i telefonní čísla, která by měla mít správnou délku. Uvažuj následující dva formáty za správné:
 
-- formát `+420734123456` (tj. řetězec začíná mezinárodní předvolbou `+420` a dále obsahuje 9 čísel, celkem tedy `+` a 12 čísel),
-- formát `734123456` (tj. 9 čísel).
+- formát `+420734123456` (tj. řetězec začíná mezinárodní předvolbou `+420` a dále obsahuje 9 čísel, celkem tedy `+` a 12 znaků),
+- formát `734123456` (tj. 9 znaků).
 
-Pokud uživatel nezadá číslo v platném formátu, vypiš chybu.
+Pokud uživatel nezadá číslo v platném formátu, vypiš chybu. Kontroluj pouze **počet znaků**, nikoli to, že znaky jsou čísla.
+
+## Nepovinný úkol na doma
+
+Vyzkoušej tag `blocktranslate`, který může být využit k překladu delších textů. Níže je příklad jeho využití. Zkus tento tag s nějakým textem vložit na titulní stránku. Podívej se,
+jak se zobrazí v souboru s překlady a nějaký překlad mu vytvoř. Pozor na to, že pokud první řetězec obsahuje zalomení řádku (`\n`), musí být zalomení řádku i v překladu. Pro zjednodušení vlož řetězec pouze jako jeden řádek.
+
+```
+{% blocktranslate %}Welcome in our system. This system helps company to be efficient in its business project.{% endblocktranslate %}
+```
