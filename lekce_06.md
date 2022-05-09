@@ -329,13 +329,88 @@ class CompanyForm(ModelForm):
 
 ## Překlady
 
-Proveď překlad názvu textových polí a hlášky o úspěšném překladu u obchodních případů. Dále pomocí vnořené třídy `Meta` zařiď překlady modelu `Company` a `Contact`.
+Proveď překlad názvu textových polí a hlášky o úspěšném vytvoření u obchodních případů. Dále pomocí vnořené třídy `Meta` zařiď překlady modelu `Company` a `Contact`.
 
 Přelož možnosti stavu u společnosti. To provedeš stejně jako u jiných řetězců, pouze pozor na to, že musíš překládat pouze slovní názvy, nikoli zkratky (tj. pouze `New`, nikoli `N`).
+
+### Řešení
+
+```py
+class Company(models.Model):
+    # Překlady stavů u firmy - vždy překládám druhou hodnotu vloženého řetězce, první nechám být
+    status_choices = (
+        ("N", _("New")),
+        ("L", _("Lead")),
+        ("O", _("Opportunity")),
+        ("C", _("Active Customer")),
+        ("FC", _("Former Customer")),
+        ("I", _("Inactive")),
+    )
+    name = models.CharField(_("Name"), max_length=20)
+    status = models.CharField(_("Status"), max_length=2, default="N", choices=status_choices)
+    phone_number = models.CharField(_("Phone Number"),max_length=20, null=True, blank=True)
+    email = models.CharField(_("Email"),max_length=50, null=True, blank=True)
+    identification_number = models.CharField(_("Identification Number"),max_length=100)
+    address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+    # Vložím třídu Meta kvůli překladu Foreign Key
+    class Meta:
+        verbose_name = _("Company")
+        verbose_name_plural = _("Companies")
+
+class Contact(models.Model):
+    primary_company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=20)
+    email = models.CharField(max_length=50)
+
+    # Vložím třídu Meta kvůli překladu Foreign Key
+    class Meta:
+        verbose_name = _("Contact")
+        verbose_name_plural = _("Contacts")
+
+class Opportunity(models.Model):
+    status_choices = (
+        ("1", "Prospecting"),
+        ("2", "Analysis"),
+        ("3", "Proposal"),
+        ("4", "Negotiation"),
+        ("5", "Closed Won"),
+        ("0", "Closed Lost"),
+    )
+
+    # Překlad polí je zařízen třídami Meta, u modelu User to za nás zařídí Django
+    company = models.ForeignKey(Company, on_delete=models.RESTRICT)
+    sales_manager = models.ForeignKey(User, on_delete=models.RESTRICT)
+    primary_contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, null=True, blank=True)
+    # Zde mám přeložené názvy
+    description = models.TextField(_("Description"), null=True)
+    status = models.CharField(_("Status"), max_length=2, default="1", choices=status_choices)
+    value = models.DecimalField(_("Value"), max_digits=10, decimal_places=2, null=True)
+```
 
 ## Validate čísla
 
 Do metody clean_identification_number přidej kontrolu, zda hodnota obsahuje pouze čísla. K tomu můžeš využít metodu `isdigit()`, kterou zavoláš pomocí tečkové notace, např. `retezec.isdigit()`. Metoda vrací hodnotu `True`, pokud řetězec obsahuje pouze čísla. 
+
+### Řešení
+
+```py
+    def clean_identification_number(self):
+        identification_number = self.cleaned_data['identification_number']
+
+        if len(identification_number) != 8:
+            raise ValidationError(_("The identification number has incorrect length."))
+        # Pokud v hodnotě, kterou zadal uživatel, nejsou jen čísla...
+        if not identification_number.isdigit():
+            # Vyvolám chybu
+            raise ValidationError(_("The identification number must contain only numbers."))
+        return identification_number
+```
 
 ## Bonus: Validace e-mailu
 
@@ -351,14 +426,42 @@ Podmínku, zda byl vyplněn e-mail můžeš sestavit např. takto:
     return email
 ```
 
+### Řešení
+
+Vložíme metodu `clean_email`, která zkontroluje, zda je v řetězci zavináš.
+
+```py
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if email:
+            if "@" not in email:
+                raise ValidationError(_("Email does not contain @."))
+        return email
+```
+
 ## Bonus: Validace telefonního čísla
 
 Důležitá jsou i telefonní čísla, která by měla mít správnou délku. Uvažuj následující dva formáty za správné:
 
-- formát `+420734123456` (tj. řetězec začíná mezinárodní předvolbou `+420` a dále obsahuje 9 čísel, celkem tedy `+` a 12 znaků),
+- formát `+420734123456` (tj. řetězec začíná mezinárodní předvolbou `+420` a dále obsahuje 9 čísel, celkem tedy `+` a 12 čísel),
 - formát `734123456` (tj. 9 znaků).
 
 Pokud uživatel nezadá číslo v platném formátu, vypiš chybu. Kontroluj pouze **počet znaků**, nikoli to, že znaky jsou čísla.
+
+### Řešení
+
+```py
+    def clean_phone_number(self):
+        phone_number = self.cleaned_data['phone_number']
+        if phone_number:
+            if phone_number.startswith("+420"):
+                if len(phone_number) != 13:
+                    raise ValidationError(_("Incorrect format of phone number"))
+            else:
+                if len(phone_number) != 9:
+                    raise ValidationError(_("Incorrect format of phone number"))
+        return phone_number
+```
 
 ## Nepovinný úkol na doma
 
