@@ -15,7 +15,19 @@ Pokud vyvíjíme web pro uživatele z různých zemí, většínou neřešíme p
 
 Aby se různé jazyky nepletly v textu, Django umožňuje generovat textové soubory, do kterého jsou automaticky importovány označené řetězce. Pokud každý řetězec pak v textovém souboru vytvoříme jeho překlad. Textových souborů s překlady můžeme mít libovolné množství, záleží čístě na tom, kolik jazykových verzí chceme vytvořit.
 
-Django využívá sadu nástrojů gettext, které je potřeba nainstalovat. Instalační balíček pro Windows si můžeš stáhnout [zde](https://mlocati.github.io/articles/gettext-iconv-windows.html). Ve většině případů je nejlepší kombinace `64 bit` a `static`. Po instalaci je potřeba restartovat vývojové prostředí.
+Django využívá sadu nástrojů gettext, které je potřeba nainstalovat. Instalační balíček pro Windows si můžeš stáhnout [zde](https://mlocati.github.io/articles/gettext-iconv-windows.html). Ve většině případů je nejlepší kombinace `64 bit` a `static`. Po instalaci je potřeba restartovat vývojové prostředí. Postup instalace na MacOS spočívá v následujících příkazech:
+
+```
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+brew install gettext
+brew link gettext --force
+```
+
+A konečně instalace na Ubuntu spočívá v následujícím příkaze:
+
+```
+sudo apt-get install gettext
+```
 
 Nyní můžeme začít s označením řetězce k překladu. V případě pohledů můžeme například přeložit zprávy, které se zobrazují uživateli po úspěšném provedení nějakého úkonu.
 
