@@ -115,6 +115,15 @@ MIDDLEWARE = [
 ]
 ```
 
+Dále je potřeba doplnit seznam dostupných jazyků. Pokud počítáme s češtinou a angličtinou, pak doplníme:
+
+```py
+LANGUAGES = [
+    ["cs", "Czech"],
+    ["en", "English"]
+]
+```
+
 Do souboru `company_manager/urls.py` (tj. do **hlavního** souboru s adresami, **nikoli** do `crm/urls.py`) do seznamu `urlpatterns` přidáme následující řádek, který zajišťuje pohledy pro práci s jazykovými verzemi, mimo jiné pohled na změnu jazykové verze.
 
 ```
