@@ -202,7 +202,6 @@ web: python company_manager/manage.py runserver 0.0.0.0:$PORT
 release: python company_manager/manage.py migrate
 ```
 
-
 ```
 heroku run bash
 ```
@@ -216,6 +215,18 @@ CSRF_TRUSTED_ORIGINS = [
     "https://company-manager-jirka.herokuapp.com"
 ]
 ```
+
+## Řešení problémů
+
+Pokud aplikace neběží, na webu zpravidla vidíme pouze jednoduchou hlášku, která nám nic neřekne. Při pátrání po příčinách problému je dobré podívat se do logu, který obsahuje výpis zpráv, jaké vidíme v terminálu.
+
+Pokud spustíme příkaz
+
+```
+heroku logs --tail
+```
+
+uvidíme několik posledních zpráv a navíc se nám budou zobrazovat nové zprávy, které jsou vygenerovány. Pokud tedy např. obnovíme stránku aplikace pomocí F5, v terminálu se objeví jeden či více nových řádků.
 
 # Cvičení
 
