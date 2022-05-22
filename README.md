@@ -6,9 +6,9 @@
 * [Lekce 4 (Registrace uživatelů, rozšíření modelu uživatele, zprávy)](lekce_04.md)
 * [Lekce 5 (Úprava administrátorského rozhraní, automatické testy)](lekce_05.md)
 * [Lekce 6 (Překlady, import dat, requirements, výchozí hodnoty)](lekce_06.md)
-* [Lekce 7 (Sítě, HTTP protokol, deployment, modul django-crispy-forms, časové zóny, merge migrací)](lekce_07.md)
-* Lekce 8 (Django REST Framework, JavaScript, autocomplete, HTML editor)
-* Lekce 9 (Modul django-tables2, filtry)
+* [Lekce 7 (Sítě, HTTP protokol, deployment)](lekce_07.md)
+* [Lekce 8 (Časové zóny, modul django-crispy-forms, Django REST Framework, HTML editor)](lekce_08.md)
+* Lekce 9 (Modul django-tables2, filtry, JavaScript)
 * Lekce 10 (Nahrávání souborů, statické soubory, cookies a relace, grafy a vizalizace)
 
 
