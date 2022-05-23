@@ -233,3 +233,13 @@ class CompanyForm(ModelForm):
             )
         )
 ```
+
+# Cvičení
+
+## Firmy přes API
+
+Umožni prohlížení seznamu firem přes API. Vytvoř nový serializer, který bude obsahovat pole `name`, `status`, `identification_number`, `email`. Vytvoř nový pohled a přidej adresu do routeru. Otestuje pomocí modulu `request`, že API funguje.
+
+## Bonus: Formulář pro obchodní případ
+
+Uprav formulář pro obchodní případ, aby též využíval moduly `django-crispy-forms` a `crispy-bootstrap5`.
