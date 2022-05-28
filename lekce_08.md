@@ -173,67 +173,6 @@ response = requests.get("http://localhost:8000/api/opportunities/")
 print(response.text)
 ```
 
-# CK Editor
-
-Nakonec si vyzkoušíme přidat editor, který umožní uživatelům snadno vytvářet formátovaný obsah. Takový editor se hodí například k editaci článků zpravodajského serveru nebo popisu produktu v e-shopu. Jako editor použijeme [CK Editor](https://ckeditor.com/), což je editor vytvořený v jazyce JavaScript a nabízí spoustu různých možností nastavení. K CK Editoru existuje modul `django-ckeditor`, který nám umožní snadno využít CK Editor v naší aplikaci.
-
-```py
-INSTALLED_APPS = [
-    # Ostatní hodnoty necháme v seznamu
-    "ckeditor",
-]
-```
-
-Do naší aplikace musíme přidat zdrojový kód CK Editoru. K tomu vytvoříme adresář `static` v kořenovém adresáři Django projektu a do něj stáhneme a rozbalíme [CK editor](https://ckeditor.com/ckeditor-5/download/).
-
-```py
-STATIC_ROOT = "static/"
-CKEDITOR_BASEPATH = "/static/ckeditor/ckeditor/"
-```
-
-Nyní k modelu `Company` přidáme nové pole typu `RichTextField`.
-
-```py
-from ckeditor.fields import RichTextField
-
-class Company(models.Model):
-    # Ostatní pole ponecháme
-    notes = RichTextField()
-```
-
-A nakonec přidáme pole `notes` i do formuláře `CompanyForm`, kde mu nastavíme `widget=CKEditorWidget`.
-
-```py
-from ckeditor.widgets import CKEditorWidget
-
-class CompanyForm(ModelForm):
-    notes = CharField(widget=CKEditorWidget())
-
-    class Meta:
-        model = Company
-        # Sem přidáme pole notes
-        fields = ["name", "status", "phone_number", "email", "identification_number", "notes"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            Div(
-                Div("name", css_class="col-sm-4"),
-                Div("status", css_class="col-sm-2"),
-                Div("identification_number", css_class="col-sm-4"),
-                Div("email", css_class="col-sm-4"),
-                Div("phone_number", css_class="col-sm-4"),
-                # Sem přidáme pole notes
-                Div("notes", css_class="col-sm-12"),
-                css_class="row",
-            ),
-            ButtonHolder(
-                Submit('submit', 'Submit', css_class='button')
-            )
-        )
-```
-
 # Cvičení
 
 ## Firmy přes API

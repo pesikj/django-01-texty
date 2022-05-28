@@ -7,9 +7,9 @@
 * [Lekce 5 (Úprava administrátorského rozhraní, automatické testy)](lekce_05.md)
 * [Lekce 6 (Překlady, import dat, requirements, výchozí hodnoty)](lekce_06.md)
 * [Lekce 7 (Sítě, HTTP protokol, deployment)](lekce_07.md)
-* [Lekce 8 (Registrace uživatele, modul django-crispy-forms, Django REST Framework, HTML editor)](lekce_08.md)
-* Lekce 9 (Časové zóny, modul django-tables2, filtry, JavaScript)
-* Lekce 10 (Nahrávání souborů, statické soubory, cookies a relace, grafy a vizalizace)
+* [Lekce 8 (Registrace uživatele, modul django-crispy-forms, Django REST Framework)](lekce_08.md)
+* [Lekce 9 (HTML editor, časové zóny, modul django-tables2, filtry, nahrávání souborů)](lekce_09.md)
+* Lekce 10 (JavaScript, statické soubory, cookies a relace, grafy a vizalizace)
 
 
 # Práce s Gitem
