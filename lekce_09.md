@@ -82,7 +82,7 @@ K časovým zónám se ještě vrátíme, ale nyní přejděme k tabulkám.
 
 # Modul django-tables2
 
-Pro práci s tabulkami existuje modul `django-tables2`, který za nás zařídí zobrazení tabulky v pěkném formátu, stránkování a další věci.
+Pro práci s tabulkami existuje modul `django-tables2`, který za nás zařídí zobrazení tabulky v pěkném formátu, stránkování a další věci. Po instalaci modulu přidáme do seznamu `INSTALLED_APPS` v souboru `settings.py` položku `django_tables2`. Dále bychom pro naše tabulky měli zvolit šablonu. Modul `django-tables2` bohužel zatím nepodporuje Bootstrap 5, vybereme tedy variantu pro Bootstrap 4. Hodnotu uložíme do konstanty `DJANGO_TABLES2_TEMPLATE`.
 
 ```py
 INSTALLED_APPS = (
@@ -92,6 +92,8 @@ INSTALLED_APPS = (
 
 DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap4.html"
 ```
+
+Dále vytvoříme samotnou tabulku. Tabulka je třída, která dědí od třídy `Table`. Pro přehlednost je nejlepší všechny tabulky ukládat do samostatného souboru `tables.py`. Vytvoříme novou třídu `OpportunityTable`, která bude reprezentovat tabulku s obchodními případy. Samostné nastavení je prováděno stejně jako u formulářů, tj. pomocí vnořené třídy `Meta`. Té nastavíme atributy `model` a `fields`.
 
 ```py
 import django_tables2 as tables
@@ -103,7 +105,10 @@ class OpportunityTable(tables.Table):
         fields = ("company", "sales_manager", "status", "value", "updated_on")
 ```
 
+Dále upravíme pohled `OpportunityListView`, kde tabulku zobrazíme. Nově bude pohled dědit od třídy `SingleTableView`. Jako atribut `table_class` nastavíme vytvořenou tabulku `OpportunityTable`.
+
 ```py
+import crm.tables as tables
 from django_tables2 import SingleTableView
 
 class OpportunityListView(LoginRequiredMixin, SingleTableView):
@@ -111,6 +116,8 @@ class OpportunityListView(LoginRequiredMixin, SingleTableView):
     table_class = tables.OpportunityTable
     template_name = "opportunity/list_opportunity.html"
 ```
+
+Jako poslední krok je potřeba upravit šablonu `list_opportunity.html`. Pro vykreslení tabulek nahrajeme nejprve tag `render_table` a následně ho použijeme, abychom vykresili tabulku, která je uložená v proměnné `table`.
 
 ```
 {% extends "base.html" %}
@@ -121,13 +128,25 @@ class OpportunityListView(LoginRequiredMixin, SingleTableView):
 {% endblock %}
 ```
 
+Výsledek vypadá takto.
+
 ![](images/lekce_09/table.PNG)
 
+## Úprava tabulky
+
+Nedostatkem naší tabulky je, že se uživatel nemůže proklikat na pohled pro úpravu obchodních případů, protože žádný sloupeček nefunguje jako odkaz. Pokud chceme, aby nějaký sloupeček fungoval jako odkaz, musíme jej vytvořit jako atribut třídy `LinkColumn`. Té jako první parametr dáme název adresy, na který odkaz má vést, a jako parametr `args` vložíme seznam argumentů, které pro otevření adresy potřebujeme. V tomto případě je to primární klíč (`pk`) obchodního případu. Ten vložíme pomocí třídy `A` (zkratka od `Accessor`) z modulu `django_tables2.utils`.
+
+Další možností, kterou modul nabízí, je úprava vzhledu. Protože podtržení nevypadá příliš esteticky, pokusíme se ho zbavit pomocí CSS třídy. Pomocí parametru `attrs` vložíme dvourozměrný slovník, kde klíče vnějšího slovníku tvoří názvy tagů, klíče vnitřního slovníku názvy atributů a jejich hodnoty jsou požadované hodnoty atributů. V případě sloupce `LinkColumn` můžeme jako tag použít `a`, protože tento tag určitě ve sloupci s odkazem musí být. Pro všechny typy sloupců jsou k dispozici `tr`, `td` a `cell`. Nastavíme tedy odkazu třídu (`class`) `cell-with-link`.
+
 ```py
+from django_tables2.utils import A
+
 class OpportunityTable(tables.Table):
     company = tables.LinkColumn("opportunity_update", args=[A("pk")],
                                 attrs={"a": {"class": "cell-with-link"}})
 ```
+
+Třídu musíme dále vytvořit. Odkaz nastavíme jako nepodtržený (`text-decoration-line: none`) a tučný (`font-weight: bold`).
 
 ```css
 .cell-with-link {
@@ -138,6 +157,8 @@ class OpportunityTable(tables.Table):
 
 ## Modul django-filter
 
+Uživatelé si často chtějí zobrazit jen část záznamů, v našem případě to mohou být obchodní případy určité firmy nebo v určitém stavu. Pro výběr specifických záznamů můžeme využít modul `django-filter`, který lze využívat spolu s modulem `django-tables2`. Na začátku postupujeme klasicky - modul nainstalujeme a přidáme do seznamu `INSTALLED_APPS`.
+
 ```py
 INSTALLED_APPS = [
     ...
@@ -145,14 +166,24 @@ INSTALLED_APPS = [
 ]
 ```
 
+Dále vytvoříme filter. Stejně jako u tabulek je nejlepší ukládat filtry do samostatného souboru, který pojmenujeme `filters.py`.  Filtr vytvoříme jako třídu, která dědí od třídy `FilterSet`. Nastavení třídy je pak stejné jako u tabulky nebo formuláře, tj. s využitím vnořené třídy `Meta`.
+
 ```py
+import django_filters
+from crm.models import Opportunity
+
 class OpportunityFilter(django_filters.FilterSet):
     class Meta:
         model = Opportunity
         fields = ['company', 'sales_manager', "status"]
 ```
 
+Dále se musíme rozhodnout, jak filtr vykreslit. Filtr je ve své podstatě formulář, k jeho vykreslení můžeme použít modul `django-crispy-forms`. Vytvoříme tedy `helper`, který říká, jak má být formulář vykreslený. Helper vytvoříme jako samostatnou třídu `OpportunityFilterFormHelper`, která bude dědit od třídy `FormHelper`.
+
 ```py
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Submit, Div
+
 class OpportunityFilterFormHelper(FormHelper):
     form_method = 'GET'
     layout = Layout(
@@ -165,6 +196,8 @@ class OpportunityFilterFormHelper(FormHelper):
             )
         )
 ```
+
+Nakonec je potřeba upravit pohled `OpportunityListView`. U něj upravíme dědičnost, na druhé místo (po `LoginRequiredMixin`) vložíme `SingleTableMixin` a za něj `FilterView`. Pohled je tedy připravený jak na tabulku, tak na filtr. Dále je potřeba přidat atribut `filterset_class`, který bude mít hodnotu `OpportunityFilter`. Jako poslední krok je potřeba vložit metodu `get_filterset`, která zajistí přiloží `helper` k formuláři s filtrem. Nejprve zavoláme metodu `get_filterset()` mateřské třídy `FilterView`, ze které získáme filter jako proměnnou `filterset`. K atributu `form` proměnné `filterset` pak jako atribut `helper` vložíme objekt třídy `OpportunityFilterFormHelper`.
 
 ```py
 class OpportunityListView(LoginRequiredMixin, SingleTableMixin, FilterView):
@@ -179,6 +212,8 @@ class OpportunityListView(LoginRequiredMixin, SingleTableMixin, FilterView):
         return filterset
 ```
 
+Jako poslední krok upravíme šablonu. Přidáme tagy `crispy_forms_tags` a pomocí tagu `crispy` vyrenderujeme formulář s filtrem.
+
 ```
 {% extends "base.html" %}
 {% load render_table from django_tables2 %}
@@ -189,4 +224,6 @@ class OpportunityListView(LoginRequiredMixin, SingleTableMixin, FilterView):
     {% render_table table %}
 {% endblock %}
 ```
+
+![](images/lekce_09/filter.PNG)
 
