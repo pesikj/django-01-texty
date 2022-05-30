@@ -195,21 +195,30 @@ class OpportunityFilterFormHelper(FormHelper):
                 css_class="row"
             )
         )
+
+class OpportunityFilter(django_filters.FilterSet):
+    class Meta:
+        model = Opportunity
+        fields = ['company', 'sales_manager', "status"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.form.helper = OpportunityFilterFormHelper()
 ```
 
-Nakonec je potřeba upravit pohled `OpportunityListView`. U něj upravíme dědičnost, na druhé místo (po `LoginRequiredMixin`) vložíme `SingleTableMixin` a za něj `FilterView`. Pohled je tedy připravený jak na tabulku, tak na filtr. Dále je potřeba přidat atribut `filterset_class`, který bude mít hodnotu `OpportunityFilter`. Jako poslední krok je potřeba vložit metodu `get_filterset`, která zajistí přiloží `helper` k formuláři s filtrem. Nejprve zavoláme metodu `get_filterset()` mateřské třídy `FilterView`, ze které získáme filter jako proměnnou `filterset`. K atributu `form` proměnné `filterset` pak jako atribut `helper` vložíme objekt třídy `OpportunityFilterFormHelper`.
+Nakonec je potřeba upravit pohled `OpportunityListView`. U něj upravíme dědičnost, na druhé místo (po `LoginRequiredMixin`) vložíme `SingleTableMixin` a za něj `FilterView`. Pohled je tedy připravený jak na tabulku, tak na filtr. Dále je potřeba přidat atribut `filterset_class`, který bude mít hodnotu `OpportunityFilter`.
 
 ```py
+from django_tables2 import SingleTableView, SingleTableMixin
+from django_filters.views import FilterView
+import crm.filters as filters
+import crm.tables as tables
+
 class OpportunityListView(LoginRequiredMixin, SingleTableMixin, FilterView):
     model = models.Opportunity
     table_class = tables.OpportunityTable
     template_name = "opportunity/list_opportunity.html"
     filterset_class = OpportunityFilter
-
-    def get_filterset(self, filterset_class):
-        filterset = super().get_filterset(filterset_class)
-        filterset.form.helper = OpportunityFilterFormHelper()
-        return filterset
 ```
 
 Jako poslední krok upravíme šablonu. Přidáme tagy `crispy_forms_tags` a pomocí tagu `crispy` vyrenderujeme formulář s filtrem.

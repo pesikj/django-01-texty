@@ -9,7 +9,7 @@
 * [Lekce 7 (Sítě, HTTP protokol, deployment)](lekce_07.md)
 * [Lekce 8 (Registrace uživatele, modul django-crispy-forms, Django REST Framework)](lekce_08.md)
 * [Lekce 9 (HTML editor, časové zóny, modul django-tables2, filtry, nahrávání souborů)](lekce_09.md)
-* Lekce 10 (JavaScript, statické soubory, cookies a relace, grafy a vizalizace)
+* Lekce 10 (JavaScript, statické soubory, grafy a vizalizace, dump dat)
 
 
 # Práce s Gitem
