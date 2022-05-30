@@ -179,6 +179,94 @@ print(response.text)
 
 Umožni prohlížení seznamu firem přes API. Vytvoř nový serializer, který bude obsahovat pole `name`, `status`, `identification_number`, `email`. Vytvoř nový pohled a přidej adresu do routeru. Otestuje pomocí modulu `request`, že API funguje.
 
+### Řešení
+
+Přidáme `CompanySerializer` do souboru `crm/serializers.py`.
+
+```py
+class CompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Company
+        fields = ['name', 'status', 'identification_number', 'email']
+```
+
+Do souboru `views.py` přidáme `CompanyViewSet`.
+
+```py
+class CompanyViewSet(viewsets.ModelViewSet):
+    queryset = models.Company.objects.all()
+    serializer_class = CompanySerializer
+```
+
+V souboru `urls.py` přidáme další adresu do routeru.
+
+```py
+router.register(r'companies', views.CompanyViewSet)
+```
+
+A vytvoříme testovací skript.
+
+```py
+import requests
+response = requests.get("http://localhost:8000/api/companies/")
+print(response.text)
+```
+
 ## Bonus: Formulář pro obchodní případ
 
 Uprav formulář pro obchodní případ, aby též využíval moduly `django-crispy-forms` a `crispy-bootstrap5`.
+
+### Řešení
+
+Upravíme formulář ve `forms.py`.
+
+```py
+from crm.models import Employee, Company, Opportunity
+
+class OpportunityForm(ModelForm):
+    class Meta:
+        model = Opportunity
+        fields = ["company", "primary_contact", "description", "status"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Div(
+                Div("company", css_class="col-sm-4"),
+                Div("primary_contact", css_class="col-sm-4"),
+                Div("status", css_class="col-sm-4"),
+                Div("description", css_class="col-sm-12"),
+                css_class="row",
+            ),
+            ButtonHolder(
+                Submit('submit', 'Submit', css_class='button')
+            )
+        )
+```
+
+Upravíme šablonu `opportunity/create_opportunity.html`.
+
+```html
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<h1>Create new company</h1>
+<form method="post">
+    {% csrf_token %}
+    {% crispy form %}
+</form>
+{% endblock %} 
+```
+
+Provedeme úpravy pohledů - odebereme atributy `fields` a přidáme `form_class`.
+
+```py
+class OpportunityCreateView(PermissionRequiredMixin, SuccessMessageMixin, CreateView):
+    # Tento řádek upravím
+    form_class = OpportunityForm
+
+class OpportunityUpdateView(PermissionRequiredMixin, SuccessMessageMixin, UpdateView):
+    # Tento řádek upravím
+    form_class = OpportunityForm
+```

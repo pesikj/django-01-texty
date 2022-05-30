@@ -53,7 +53,7 @@ class Opportunity(models.Model):
     updated_on = models.DateTimeField(auto_now=True, null=True)
 ```
 
-Nesmíme zapomenou na migraci databáze.
+Nesmíme zapomenout na migraci databáze.
 
 ```
 python manage.py migrate
@@ -236,3 +236,25 @@ Jako poslední krok upravíme šablonu. Přidáme tagy `crispy_forms_tags` a pom
 
 ![](images/lekce_09/filter.PNG)
 
+## Textové pole pro vyhledávání
+
+V běžném CRM systému je zpravidla obrovské množství firem (jsou tam napříklady nakopírovány z nějaké databáze, která čerpá z obchodního rejstříku) a běžná firma má obchodní styky jen s malým počtem z nich. Proto by bylo dobré umožnit uživateli výběr firmy pomcí fultextového vyhledávání. To zařídíme tak, že vytvoříme atribut `company` u třídy `OpportunityFilter`, které bude postavené na třídě `CharFilter`. Jedná se o "obyčejné" textové políčko, do kterého může uživatel zapisovat. Pokud budeme chtít vyhledávat podle jména firmy, využíváme pole `name` navázaného modelu `Company`. To zajistíme pomocí dvou podtržítek (jedno by bylo málo, protože to je často využíváno v názvech polí). Dále volíme způsob, kterým chceme provést vyhledávání. Django [nabízí](https://docs.djangoproject.com/en/4.0/ref/models/querysets/#field-lookups) několik způsobů porovnání. My si vybereme `icontains`, která neuvažuje velikost písmen a vybere všechny záznamy, které mají ve jménu obsažený hledaný řetězec. Například pokud zadáme do vyhledávání "škoda" a máme v databázi obchodní případy pro firmu s názvem "ŠKODA AUTO a.s.", tyto obchodní případy se zobrazí.
+
+```py
+class OpportunityFilter(django_filters.FilterSet):
+    company = django_filters.CharFilter(field_name="company__name", lookup_expr='icontains')
+```
+
+# Cvičení
+
+## Tabulka firem
+
+Vytvoř tabulku, která bude zobrazovat informace o firmách. V tabulce zobraz pole `name`, `status`, `phone_number` a `identfication_number`. Pole `name` uprav tak, aby umožňovali proklik na pohled s editací detailů firmy.
+
+## Bonus: Filtr firem
+
+K vytvořené tabulce přidej filtr, který uživateli umožní snadno vyhledat nebo vybrat firmy dle požadovaných kritérií:
+
+- Uživatel může vybrat firmy dle statusu (pole `status`).
+- Uživatel může vyhledat firmu (firmy) dle názvu, přičemž se firma zobrazí i v případě, že uživatel zadá pouze část jejího názvu.
+- Uživatel může vyhledat firmu podle IČO, přičemž se firm zobrazí pouze v případě, že uživatel zadá IČO přesně. V tomto případě nelze jako parametr `lookup_expr` použít `icontains`, ale jinou metodu - správný název můžeš najít [v dokumentaci](https://docs.djangoproject.com/en/4.0/ref/models/querysets/#field-lookups). Zkus ale nejprve vyhledávací pole jako samostatný atribut vůbec nevytvářet, pouze přidej `identification_number` do seznamu `fields` vnořené třídy `Meta` a vyzkoušej, jestli výchozí chování pole není přesně to, co potřebuješ.
