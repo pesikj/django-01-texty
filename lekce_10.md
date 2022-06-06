@@ -146,6 +146,10 @@ data: [{%for row in qs%}{{row.opportunity_value}},{%endfor%}]
 
 ## Grafy a filtry
 
+Předchozí graf má nevýhodu v tom, že uživatel nemůže nijak ovlivnit, co je zobrazeno. Můžeme ale využít filtry, které jsme si ukázali v předchozí lekce, a nechat uživatele vybrat záznamy, které se mají v grafu zobrazit. K tomu stačí upravit `OpportunityListView`. Hlavní změnou je, že tentokrát nepracujeme se všemi záznamy, ale pouze s těmi, které vyhovují filtru, který nastavil uživatel. Tyto záznamy najdeme v atributu `self.object_list`. Kromě toho, že atribut nemusí obsahovat všechny záznamy pro daný model, s ním můžeme pracovat stejně jako v předchozím případě (jedná se opět o `QuerySet`) a napojit na něj metodu `filter()`. Další operaci provádět nebudeme, tj. zobrazíme data bez agregace.
+
+Filtry je možné použít i bez tabulky, tj. můžeme pomocí filtrů ovládat pouze graf. Stačilo by odebrat kód na vykreslení tabulky ze šablony a smazat `SingleTableMixin` z mateřských tříd.
+
 ```py
 class OpportunityListView(LoginRequiredMixin, SingleTableMixin, FilterView):
     def get_context_data(self, **kwargs):
@@ -154,7 +158,33 @@ class OpportunityListView(LoginRequiredMixin, SingleTableMixin, FilterView):
         return context
 ```
 
-### Čtení na doma: Agregace 
+Přidáme kód pro zobrazení grafu.
+
+```js
+$(document).ready(function(){
+    var ctx = document.getElementById('graf').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [{%for row in qs%}'{{row.company}}',{%endfor%}],
+            datasets: [{
+                label: 'Opportunity value',
+                data: [{%for row in qs%}{{row.value}},{%endfor%}]
+            }]
+        }
+    });
+});
+```
+
+A nesmíme zapomenout na `<canvas>`.
+
+```html
+<canvas id="graf"></canvas>
+```
+
+### Čtení na doma: Agregace
+
+Pokud bychom chtěli pomocí filtrů zobrazit celkovou hodnotu obchodních případů pro jednotlivé firmy, musíme provést agregaci. Tentokrát na ni musíme jít z druhé strany, tj. od obchodních případů, protože ty jsou v atributu `self.object_list`. Abychom přidali název firmy jako další sloupeček, podle kterého má být provedena agregace, použijeme metodu `values()` a jako parametr vložíme `company__name`, tedy název firmy. Nakonec přidáme již známou metodu `annotate()`.
 
 ```py
 context["qs"] = self.object_list.filter(value__isnull=False)\
@@ -163,13 +193,85 @@ context["qs"] = self.object_list.filter(value__isnull=False)\
 
 # Dump dat
 
-```
-django-admin dumpdata
-```
+Data z Django můžeme exportovat pomocí příkazu `python manage.py dumpdata`. Ten umí vypsat vybrané záznamy na obrazovku nebo do textového souboru, z něj je pak můžeme importovat zpět, což se hodí třeba v případě, že chceme aplikaci nasadit na server nebo ji přesouváme z jednoho serveru na druhý.
+
+Zpravidla nechceme provést export celé databáze, ale jen části. Máme dvě možnosti, jak to provést - vybráním modelů (nebo celých aplikací), jejich žáznamy chceme exportovat, nebo naopak vyloučením těch, které nechceme (a všechny ostatní nevyloučené tím pádem chceme). Při exportu dat je důležité myslet především na cizí klíče. Pokud bychom totiž chtěly provést import záznamu, který se odkazuje na neexistující záznam nějakého jiného modelu, import bude neúspěšný.
+
+Začneme tím, že provedeme export. Chceme provést export modelů `auth.Group`, `auth.User` a všech modelů v aplikaci `crm`.
 
 ```
-python -Xutf8 manage.py dumpdata crm.Company crm.Opportunity --indent=4 --output=data.json
+python -Xutf8 manage.py dumpdata auth.Group auth.User crm --indent=4 --output=data.json
+```
 
+Před nahráváním je potřeba upravit signál, který vytváří objekt modelu `Employee` při vytvoření nového uživatele. Ten by totiž neměl probíhat během importu dat, tam automatické vytváření záznamů nechceme, aby se "netlouklo" k importem. Zabráníme tomu pomocí úpravy importu. Ve slovníku dalších parametrů `kwargs` máme parametr `raw`, který má hodnotu `True`, pokud dochází k importu dat. Přidáme tedy do podmínky, aby byl záznam modelu `Employee` vytvořen pouze v případě, že nedochází k importu, tj. v případě, že parametr `raw` má hodnotu `False`.
 
-# Přepínání časového pásma
+```py
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created and kwargs.get('raw', False):
+        Employee.objects.create(user=instance)
+```
 
+Nyní můžeme provést import dat. Abychom si ověřili, že import skutečně funguje, můžeme stávající databázi přejmenovat, pomocí 
+
+```
+python manage.py migrate
+```
+
+vytvořit novou a do ní nahrát data.
+
+```
+python manage.py loaddata data.json
+```
+
+Po nahrání by v aplikaci mělo fungovat přihlášení a měla by být dostupná data.
+
+# Čtení na doma: Přepínání časového pásma
+
+# Cvičení
+
+## Graf Sales Pipeline
+
+Přidej na titulní stránku graf, který je označovaný jako *Sales Pipeline*. Graf zobrazuje celkový objem obchodních případů v jednotlivých stavech, tj. jaká je celková hodnota případů ve stavu `Prospecting`, jaká je ve stavu `Analysis` atd.
+
+Grafy můžeme mít vedle sebe. Nejprve vlož do metody `get_context_data()` další dotaz. Nejprve je potřeba říct, podle kterého sloupce provádíme agregaci - to řekneme metodou `values()`, jak je uvedeno níže. Jakmile víme, podle čeho řádky sloučit, pak už postupujeme stejně jako v lekci - provedeme sumu podle hodnoty obchodního případu a vyfiltrujeme pouze řádky, který není součet prázdné číslo.
+
+```py
+context["qs2"] = models.Opportunity.objects.values("status")\
+    # Na další řádek přidej annotate pro pole value
+    # Na další řádek přidej filtr, že hodnota nemá být null
+```
+
+Dále do blocku `scripts` šablony `index.html` vlož kód, který vygeneruje druhý graf.
+
+```js
+$(document).ready(function(){
+    // Kód z lekce
+    var ctx = document.getElementById('graf').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [{%for row in qs%}'{{row}}',{%endfor%}],
+            datasets: [{
+                label: 'Opportunity value',
+                data: [{%for row in qs%}{{row.opportunity_value}},{%endfor%}]
+            }]
+        }
+    });
+    // Nový graf
+    var ctx2 = document.getElementById('graf2').getContext('2d');
+    var myChart2 = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: , //Tady chceme status pro každý řádek
+            datasets: [{
+                label: 'Opportunity value',
+                data: // Tady chceme hodnotu pro každý řádek
+            }]
+        }
+    });
+});
+</script>
+```
+
+A nezapomeň přidat další `<canvas>` s id `graf2`.
