@@ -89,6 +89,14 @@ class IndexView(TemplateView):
         return context
 ```
 
+Do šablony `base.css` vložíme odkazy na Javascript a CSS knihovny (uložení do static files je bonusové cvičení).
+
+```
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" integrity="sha256-Uv9BNBucvCPipKQ2NS9wYpJmi8DTOEfTA/nH2aoJALw=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" integrity="sha256-aa0xaJgmK/X74WM224KMQeNQC2xYKwlAt08oZqjeF0E=" crossorigin="anonymous" />
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+```
+
 Do šablony `index.html` vložíme kód pro vygenerování grafu. Atributem `type` nastavíme typ grafu (`bar` označuje sloupcový graf, další dostupné typy grafů jsou [v dokumentaci](https://www.chartjs.org/docs/latest/)) a do atributu `data` vložíme data. Do vnořeného atributu `labels` vložíme popisy řádků, což může být v našem případě název společnosti, ke které se obchodní případ vztahuje. Název musíme vložit do uvozovek. Dále do vnořeného atributu `datasets` vložíme atributy `label` (což je popisek datové řady) a `data`, což je seznam číselných hodnot, které určí výšky sloupců grafu.
 
 ```js
@@ -275,3 +283,7 @@ $(document).ready(function(){
 ```
 
 A nezapomeň přidat další `<canvas>` s id `graf2`.
+
+## Bonus: Převod do statických souborů
+
+Převeď do statických souborů Javascript skripty, které tvá aplikace nyní stahauje z internetu. Skripty i CSS soubory ideálně ukládej do podsložek podle jmen modulů, abys v budoucnu snadno odlišil(a) vlastní kód od importovaných knihoven. Např. pro Bootstrap můžeš ve složce `static` vytvořit podsložku `bootstrap`, tam uložit soubory `bootstrap.bundle.min.js` a `bootstrap.min.css` a poté nahradit odkazy přímo zadané v tagu `<link>` a `<script>` odkazem získaným pomocí Django tagu `static`.
